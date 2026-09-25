@@ -7,6 +7,7 @@ from django.shortcuts import redirect
 from . import views
 
 urlpatterns = [
+    path('health/', views.health, name='health'),
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('accounts/', include('accounts.urls')),

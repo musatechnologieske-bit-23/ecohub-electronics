@@ -15,9 +15,9 @@ EcoHub is a Django-based electronics inventory and sales management system. It p
 ## Technology
 
 - Python 3.10+
-- Django 4.2+
+- Django 5.0+
 - MySQL 8+
-- `mysqlclient` database driver
+- `PyMySQL` MySQL database driver
 - `openpyxl` for inventory spreadsheet uploads
 - `python-dotenv` for environment configuration
 - Gunicorn and Nginx for production deployment
@@ -27,8 +27,8 @@ EcoHub is a Django-based electronics inventory and sales management system. It p
 ### 1. Clone the repository
 
 ```bash
-git clone git@github.com:mosesmuriiki2/EcoHub-Electronics-.git
-cd EcoHub-Electronics-
+git clone https://github.com/musatechnologieske-bit-23/ecohub-electronics.git
+cd ecohub-electronics
 ```
 
 ### 2. Create and activate a virtual environment
@@ -37,14 +37,14 @@ cd EcoHub-Electronics-
 python3 -m venv venv
 source venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install Django mysqlclient openpyxl python-dotenv gunicorn
+python -m pip install -r requirements.txt
 ```
 
-On Ubuntu/Debian, `mysqlclient` may require system packages first:
+On Ubuntu/Debian, install WeasyPrint's system libraries before installing Python packages:
 
 ```bash
 sudo apt update
-sudo apt install -y python3-dev default-libmysqlclient-dev build-essential pkg-config
+sudo apt install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 libjpeg-dev libopenjp2-7
 ```
 
 ### 3. Configure environment variables
@@ -100,7 +100,7 @@ The following example targets an Ubuntu server with the application checked out 
 
 ```bash
 sudo apt update
-sudo apt install -y python3-venv python3-dev default-libmysqlclient-dev build-essential pkg-config nginx
+sudo apt install -y python3-venv nginx libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 libjpeg-dev libopenjp2-7
 ```
 
 Create the virtual environment and install the application dependencies:
@@ -110,7 +110,7 @@ cd /srv/ecohub
 python3 -m venv venv
 source venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install Django mysqlclient openpyxl python-dotenv gunicorn
+python -m pip install -r requirements.txt
 ```
 
 ### 2. Configure production settings
@@ -231,6 +231,29 @@ sudo certbot --nginx -d example.com -d www.example.com
 - Configure HTTPS and secure database credentials.
 - Back up the MySQL database and the `media/` directory.
 - Review Gunicorn and Nginx logs with `journalctl` and `/var/log/nginx/`.
+
+## Railway Deployment
+
+The repository includes `railway.json` and `.python-version`. Railway detects
+the Python app from `requirements.txt`, installs the dependencies, collects
+static files, runs database migrations, and starts Gunicorn. The `/health/`
+endpoint is used for Railway's deployment health check.
+
+1. Create a Railway project from this GitHub repository and add a MySQL service.
+2. Set the web service's `SECRET_KEY` to a unique random value and `DEBUG` to
+	`False`. Set `ALLOWED_HOSTS` to the Railway public domain if Railway does not
+	provide `RAILWAY_PUBLIC_DOMAIN` to the service.
+3. Reference the MySQL service variables in the web service using Railway's
+	variable reference picker: `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`,
+	`MYSQLUSER`, and `MYSQLPASSWORD`.
+4. Generate a public domain for the web service and deploy. Railway runs
+	`collectstatic` and `migrate` at startup before Gunicorn serves the app.
+5. Create the first administrator with a Railway one-off command:
+	`python manage.py createsuperuser`.
+
+Uploaded files are stored on the service filesystem by default and are not
+persistent across deployments. Add a Railway volume or object storage before
+relying on persistent user uploads.
 
 ## Useful Commands
 

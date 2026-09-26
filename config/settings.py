@@ -3,6 +3,7 @@ Django settings for Ecohub project.
 """
 
 from pathlib import Path
+from urllib.parse import urlparse
 import os
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
@@ -89,35 +90,45 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ---------------------------------------------------------------------------
 # Database
 #
-# Reads DB_NAME / DB_USER / DB_PASSWORD / DB_HOST / DB_PORT from the
-# environment. On Railway, set these on the Django service as variable
-# REFERENCES to the MySQL service, e.g.:
-#     DB_HOST=${{MySQL.MYSQLHOST}}
-#     DB_PORT=${{MySQL.MYSQLPORT}}
-#     DB_NAME=${{MySQL.MYSQLDATABASE}}
-#     DB_USER=${{MySQL.MYSQLUSER}}
-#     DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+# On Railway, we read the single MYSQL_URL connection string that Railway
+# auto-generates when a MySQL database is attached to this service
+# (mysql://user:password@host:port/database). This avoids relying on
+# individually-named DB_* reference variables, which are easy to mismatch
+# against Railway's actual variable names.
 #
-# If DB_HOST is missing OR resolves to an empty string (e.g. a broken
-# variable reference), we fail loudly here instead of silently falling
-# back to 127.0.0.1/localhost and producing a confusing connection-refused
-# error deep inside PyMySQL.
+# Locally (DEBUG=True), we fall back to DB_NAME / DB_USER / DB_PASSWORD /
+# DB_HOST / DB_PORT from your .env file as before.
+#
+# In production (DEBUG=False), if neither MYSQL_URL nor a complete set of
+# DB_* variables resolves to real values, we fail loudly here with a clear
+# error instead of silently defaulting to 127.0.0.1/localhost and producing
+# a confusing connection-refused error deep inside PyMySQL.
 # ---------------------------------------------------------------------------
 
-DB_NAME = os.getenv('DB_NAME', '').strip()
-DB_USER = os.getenv('DB_USER', '').strip()
-DB_PASSWORD = os.getenv('DB_PASSWORD', '')
-DB_HOST = os.getenv('DB_HOST', '').strip()
-DB_PORT = os.getenv('DB_PORT', '').strip()
+MYSQL_URL = os.getenv('MYSQL_URL', '').strip()
 
-if DEBUG:
-    # Sensible local defaults so `runserver` works out of the box on a dev machine
-    DB_NAME = DB_NAME or 'ecohub'
-    DB_USER = DB_USER or 'root'
-    DB_HOST = DB_HOST or '127.0.0.1'
-    DB_PORT = DB_PORT or '3306'
+if MYSQL_URL:
+    parsed = urlparse(MYSQL_URL)
+    DB_NAME = parsed.path.lstrip('/')
+    DB_USER = parsed.username or 'root'
+    DB_PASSWORD = parsed.password or ''
+    DB_HOST = parsed.hostname or ''
+    DB_PORT = str(parsed.port or 3306)
 else:
-    # In production, missing/blank DB settings should fail fast and clearly
+    DB_NAME = os.getenv('DB_NAME', '').strip()
+    DB_USER = os.getenv('DB_USER', '').strip()
+    DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+    DB_HOST = os.getenv('DB_HOST', '').strip()
+    DB_PORT = os.getenv('DB_PORT', '').strip()
+
+    if DEBUG:
+        # Sensible local defaults so `runserver` works out of the box on a dev machine
+        DB_NAME = DB_NAME or 'ecohub'
+        DB_USER = DB_USER or 'root'
+        DB_HOST = DB_HOST or '127.0.0.1'
+        DB_PORT = DB_PORT or '3306'
+
+if not DEBUG:
     missing = [
         name for name, value in [
             ('DB_NAME', DB_NAME),
@@ -129,8 +140,7 @@ else:
     if missing:
         raise ImproperlyConfigured(
             f"Missing or empty required database settings: {', '.join(missing)}. "
-            "Check that these are set (and any ${{...}} variable references "
-            "actually resolve) on the Railway service."
+            "Ensure MYSQL_URL (or DB_NAME/DB_USER/DB_HOST/DB_PORT) is set on the Railway service."
         )
 
 DATABASES = {

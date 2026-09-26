@@ -10,7 +10,8 @@ from django.core.exceptions import ImproperlyConfigured
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
+# Load environment variables from .env file (only present locally;
+# on Railway, variables come from the platform directly and this is a no-op)
 load_dotenv(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
@@ -85,16 +86,61 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# ---------------------------------------------------------------------------
 # Database
-# Connects to MySQL using environment variables
+#
+# Reads DB_NAME / DB_USER / DB_PASSWORD / DB_HOST / DB_PORT from the
+# environment. On Railway, set these on the Django service as variable
+# REFERENCES to the MySQL service, e.g.:
+#     DB_HOST=${{MySQL.MYSQLHOST}}
+#     DB_PORT=${{MySQL.MYSQLPORT}}
+#     DB_NAME=${{MySQL.MYSQLDATABASE}}
+#     DB_USER=${{MySQL.MYSQLUSER}}
+#     DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+#
+# If DB_HOST is missing OR resolves to an empty string (e.g. a broken
+# variable reference), we fail loudly here instead of silently falling
+# back to 127.0.0.1/localhost and producing a confusing connection-refused
+# error deep inside PyMySQL.
+# ---------------------------------------------------------------------------
+
+DB_NAME = os.getenv('DB_NAME', '').strip()
+DB_USER = os.getenv('DB_USER', '').strip()
+DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+DB_HOST = os.getenv('DB_HOST', '').strip()
+DB_PORT = os.getenv('DB_PORT', '').strip()
+
+if DEBUG:
+    # Sensible local defaults so `runserver` works out of the box on a dev machine
+    DB_NAME = DB_NAME or 'ecohub'
+    DB_USER = DB_USER or 'root'
+    DB_HOST = DB_HOST or '127.0.0.1'
+    DB_PORT = DB_PORT or '3306'
+else:
+    # In production, missing/blank DB settings should fail fast and clearly
+    missing = [
+        name for name, value in [
+            ('DB_NAME', DB_NAME),
+            ('DB_USER', DB_USER),
+            ('DB_HOST', DB_HOST),
+            ('DB_PORT', DB_PORT),
+        ] if not value
+    ]
+    if missing:
+        raise ImproperlyConfigured(
+            f"Missing or empty required database settings: {', '.join(missing)}. "
+            "Check that these are set (and any ${{...}} variable references "
+            "actually resolve) on the Railway service."
+        )
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQLDATABASE') or os.getenv('DB_NAME', 'ecohub'),
-        'USER': os.getenv('MYSQLUSER') or os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('MYSQLPASSWORD') or os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('MYSQLHOST') or os.getenv('DB_HOST', '127.0.0.1'),
-        'PORT': os.getenv('MYSQLPORT') or os.getenv('DB_PORT', '3306'),
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -107,18 +153,10 @@ AUTH_USER_MODEL = 'accounts.User'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # Internationalization

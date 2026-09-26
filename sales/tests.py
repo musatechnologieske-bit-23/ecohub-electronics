@@ -21,7 +21,7 @@ class SalesFlowTests(TestCase):
             password='password123',
             role=User.Role.CASHIER
         )
-        self.customer = Customer.objects.create(name='Acme Corp', phone='0711000111')
+        self.customer = Customer.objects.create(name='Acme Corp', phone='0711000111', kra_pin='A123456789Z')
 
         # Product with 50 units initial stock
         self.product = Product.objects.create(
@@ -54,6 +54,7 @@ class SalesFlowTests(TestCase):
         self.assertNotIn('85%', context['print_notes'])
         self.assertNotIn('15%', context['print_notes'])
         self.assertIn('Payment schedule to be agreed', context['print_notes'])
+        self.assertEqual(context['company_kra_pin'], 'P052109923A')
 
         invoice.notes = '30% deposit, remaining 70% on completion.'
         invoice.save(update_fields=['notes'])
@@ -63,6 +64,11 @@ class SalesFlowTests(TestCase):
         printed_document = render_to_string('sales/document_print.html', context)
         self.assertEqual(printed_document.count(self.cashier.username), 1)
         self.assertIn('Authorized signature', printed_document)
+        self.assertIn('KRA PIN: P052109923A', printed_document)
+        self.assertIn('KRA PIN:</strong> A123456789Z', printed_document)
+        self.assertIn('Warranty is provided', printed_document)
+        self.assertNotIn('Bank Code: 07000', printed_document)
+        self.assertNotIn('GREENSPAN MALL', printed_document)
         self.assertNotIn('signature-name', printed_document)
 
         receipt = Receipt.objects.create(invoice=invoice, receipt_number='RCP-PRINT-1')
@@ -74,6 +80,8 @@ class SalesFlowTests(TestCase):
         })
         self.assertEqual(printed_receipt.count(self.cashier.username), 1)
         self.assertIn('Authorized signature', printed_receipt)
+        self.assertNotIn('Bank Code: 07000', printed_receipt)
+        self.assertNotIn('GREENSPAN MALL', printed_receipt)
         self.assertNotIn('signature-name', printed_receipt)
 
     def test_doc_number_generation(self):
@@ -157,12 +165,14 @@ class SalesFlowTests(TestCase):
             {
                 'customer_id': self.customer.pk,
                 'issue_date': '2026-09-22',
+                'quotation_payment_term': 'credit',
                 'action_type': 'issue',
                 'items_payload': json.dumps(items_payload),
             }
         )
         quote = Document.objects.get(doc_number='QT-0001')
         self.assertEqual(quote.status, Document.Status.SENT)
+        self.assertEqual(quote.quotation_payment_term, Document.QuotationPaymentTerm.CREDIT)
         self.assertEqual(quote.tax, Decimal('20.00'))
         self.assertEqual(quote.total, Decimal('145.00'))
 
@@ -180,6 +190,7 @@ class SalesFlowTests(TestCase):
         invoice = Document.objects.get(doc_type=Document.DocType.INVOICE)
         self.assertEqual(invoice.converted_from, quote)
         self.assertEqual(invoice.total, quote.total)
+        self.assertEqual(invoice.quotation_payment_term, Document.QuotationPaymentTerm.CREDIT)
 
         # Stock is now deducted
         self.product.refresh_from_db()
@@ -202,6 +213,7 @@ class SalesFlowTests(TestCase):
                 'new_customer_account_number': 'ACC-0099',
                 'new_customer_phone': '+254700000001',
                 'new_customer_email': 'accounts@greenfuture.example',
+                'new_customer_kra_pin': 'p123456789a',
                 'new_customer_address': 'Nairobi, Kenya',
                 'issue_date': '2026-09-22',
                 'action_type': 'issue',
@@ -215,6 +227,27 @@ class SalesFlowTests(TestCase):
         self.assertEqual(quote.customer, customer)
         self.assertEqual(customer.account_number, 'ACC-0099')
         self.assertEqual(customer.phone, '+254700000001')
+        self.assertEqual(customer.kra_pin, 'P123456789A')
+
+    def test_quotation_print_shows_customer_pin_company_pin_and_payment_term(self):
+        quote = Document.objects.create(
+            doc_type=Document.DocType.QUOTATION,
+            doc_number='QT-PRINT-1',
+            customer=self.customer,
+            quotation_payment_term=Document.QuotationPaymentTerm.APPROVED,
+            created_by=self.cashier,
+        )
+        request = RequestFactory().get('/')
+        request.user = self.cashier
+
+        printed_document = render_to_string(
+            'sales/document_print.html',
+            _document_print_context(request, quote),
+        )
+
+        self.assertIn('A123456789Z', printed_document)
+        self.assertIn('P052109923A', printed_document)
+        self.assertIn('Payment terms:</strong> Approved', printed_document)
 
     def test_payments_and_auto_receipt_generation(self):
         self.client.login(username='cashier_sales', password='password123')

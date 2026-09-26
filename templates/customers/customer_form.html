@@ -72,6 +72,15 @@
                     <p class="text-xs text-rose-600 mt-1">{{ form.email.errors.0 }}</p>
                     {% endif %}
                 </div>
+                <div>
+                    <label for="{{ form.kra_pin.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                        KRA PIN
+                    </label>
+                    {{ form.kra_pin }}
+                    {% if form.kra_pin.errors %}
+                    <p class="text-xs text-rose-600 mt-1">{{ form.kra_pin.errors.0 }}</p>
+                    {% endif %}
+                </div>
             </div>
 
             <div>
@@ -86,10 +95,10 @@
 
             <div>
                 <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
-                    Internal Notes / Tax PIN
+                    Internal Notes
                 </label>
                 {{ form.notes }}
-                <p class="text-xs text-slate-400 mt-1">Optional shop notes or KRA / Tax PIN.</p>
+                <p class="text-xs text-slate-400 mt-1">Optional internal notes. Enter the customer KRA PIN in its dedicated field above.</p>
                 {% if form.notes.errors %}
                 <p class="text-xs text-rose-600 mt-1">{{ form.notes.errors.0 }}</p>
                 {% endif %}

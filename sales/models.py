@@ -20,12 +20,22 @@ class Document(models.Model):
         PAID = 'paid', 'Paid'
         CANCELLED = 'cancelled', 'Cancelled'
 
+    class QuotationPaymentTerm(models.TextChoices):
+        CASH = 'cash', 'Cash'
+        CREDIT = 'credit', 'Credit'
+        APPROVED = 'approved', 'Approved'
+
     doc_type = models.CharField(max_length=20, choices=DocType.choices, default=DocType.INVOICE)
     doc_number = models.CharField(max_length=50, unique=True, help_text="e.g. QT-0001 or INV-0001")
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name='documents')
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     issue_date = models.DateField(default=timezone.now)
     due_date = models.DateField(null=True, blank=True)
+    quotation_payment_term = models.CharField(
+        max_length=20,
+        choices=QuotationPaymentTerm.choices,
+        default=QuotationPaymentTerm.CASH,
+    )
 
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     discount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))

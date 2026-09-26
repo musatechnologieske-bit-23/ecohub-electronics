@@ -21,13 +21,13 @@ def _document_print_context(request, document):
         f"Delivery:\n"
         f"- Delivery and installation schedule to be agreed.\n"
         f"Payment:\n"
-        f"- Payment schedule to be agreed with the customer.\n\n"
-        "Warranty: as per the manufacturers' and Ecohub warranty terms."
+        f"- Payment schedule to be agreed with the customer."
     )
     default_signature = request.user.get_full_name() or request.user.get_username()
     signature_name = request.GET.get('signature_name', '').strip()
     return {
         'document': document,
+        'company_kra_pin': 'P052109923A',
         'items': document.items.select_related('product').all(),
         'payments': document.payments.select_related('received_by').all(),
         'print_user': signature_name or default_signature,
@@ -176,6 +176,11 @@ def document_create(request):
         issue_date = request.POST.get('issue_date')
         due_date = request.POST.get('due_date') or None
         notes = request.POST.get('notes', '').strip()
+        quotation_payment_term = request.POST.get(
+            'quotation_payment_term', Document.QuotationPaymentTerm.CASH
+        )
+        if quotation_payment_term not in Document.QuotationPaymentTerm.values:
+            quotation_payment_term = Document.QuotationPaymentTerm.CASH
         discount_val = Decimal(request.POST.get('discount') or '0.00')
         tax_val = Decimal(request.POST.get('tax') or '0.00')
         action_type = request.POST.get('action_type', 'issue')  # 'draft' or 'issue'
@@ -210,6 +215,7 @@ def document_create(request):
                 account_number=request.POST.get('new_customer_account_number', '').strip(),
                 phone=request.POST.get('new_customer_phone', '').strip(),
                 email=request.POST.get('new_customer_email', '').strip(),
+                kra_pin=request.POST.get('new_customer_kra_pin', '').strip().upper(),
                 address=request.POST.get('new_customer_address', '').strip(),
             )
         elif customer_id:
@@ -234,6 +240,11 @@ def document_create(request):
                 status=initial_status,
                 issue_date=issue_date or timezone.now().date(),
                 due_date=due_date,
+                quotation_payment_term=(
+                    quotation_payment_term
+                    if doc_type == Document.DocType.QUOTATION
+                    else Document.QuotationPaymentTerm.CASH
+                ),
                 discount=discount_val,
                 tax=tax_val,
                 notes=notes,
@@ -320,6 +331,7 @@ def quotation_convert_to_invoice(request, pk):
             discount=quotation.discount,
             tax=quotation.tax,
             total=quotation.total,
+            quotation_payment_term=quotation.quotation_payment_term,
             notes=quotation.notes,
             converted_from=quotation,
             created_by=request.user,

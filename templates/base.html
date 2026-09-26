@@ -53,6 +53,11 @@
                         <span>Dashboard</span>
                     </a>
 
+                    <a href="{% url 'reference_guide' %}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors {% if request.resolver_match.url_name == 'reference_guide' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                        <i class="fa-solid fa-book-open w-6 text-center mr-2"></i>
+                        <span>User Guide</span>
+                    </a>
+
                     <a href="{% url 'inventory:product_list' %}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors {% if 'inventory' in request.resolver_match.app_names and request.resolver_match.url_name != 'stock_movement_list' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
                         <i class="fa-solid fa-boxes-stacked w-6 text-center mr-2"></i>
                         <span>Inventory</span>

@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}User Guide - Ecohub Energy Africa Limited{% endblock %}
+{% block header_title %}User Guide{% endblock %}
+{% block header_subtitle %}Step-by-step reference for everyday Ecohub workflows{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl space-y-8">
+    <section class="border-b border-slate-200 pb-6">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-2xl">
+                <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">Operations handbook</p>
+                <h2 class="mt-2 text-3xl font-black text-slate-950">From stock receipt to paid invoice</h2>
+                <p class="mt-3 text-sm leading-6 text-slate-600">Use this reference to complete common tasks, understand when stock changes, and find the right screen quickly.</p>
+            </div>
+            <nav aria-label="Guide sections" class="flex flex-wrap gap-2 text-sm">
+                <a href="#new-user-tips" class="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:border-emerald-600 hover:text-emerald-800">New user tips</a>
+                <a href="#getting-started" class="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:border-emerald-600 hover:text-emerald-800">Start</a>
+                <a href="#inventory" class="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:border-emerald-600 hover:text-emerald-800">Inventory</a>
+                <a href="#sales" class="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:border-emerald-600 hover:text-emerald-800">Sales</a>
+                <a href="#customers" class="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:border-emerald-600 hover:text-emerald-800">Customers</a>
+                {% if user.is_admin_role %}<a href="#administration" class="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:border-emerald-600 hover:text-emerald-800">Admin</a>{% endif %}
+            </nav>
+        </div>
+    </section>
+
+    <section id="new-user-tips" class="scroll-mt-6 border-l-4 border-emerald-600 bg-white px-5 py-5 sm:px-6">
+        <div class="flex items-start gap-3">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-800"><i class="fa-solid fa-lightbulb"></i></span>
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">First time using Ecohub?</p>
+                <h3 class="mt-1 text-lg font-bold text-slate-950">A few tips before your first transaction</h3>
+                <ul class="mt-4 grid gap-x-8 gap-y-3 text-sm leading-5 text-slate-600 md:grid-cols-2">
+                    <li><strong class="text-slate-900">Start at the dashboard.</strong> Use the sidebar to move between customers, inventory, invoices, and quotations. Select your name's role label to understand your access: cashiers handle daily sales; admins also manage products, stock, staff, and reports.</li>
+                    <li><strong class="text-slate-900">Check before creating.</strong> Search for the customer or product first to avoid duplicates. If a product or customer is missing, ask an admin to add it or use the available customer option when preparing a quotation.</li>
+                    <li><strong class="text-slate-900">Use a draft while details are uncertain.</strong> Drafts let you review a document before issuing it. Issuing an invoice deducts catalog stock; quotations and draft invoices do not.</li>
+                    <li><strong class="text-slate-900">Record payments on the invoice.</strong> Enter the amount actually received. Partial payments keep a balance open; a receipt is created when the invoice is fully paid.</li>
+                    <li><strong class="text-slate-900">Keep references useful.</strong> Add supplier or payment references where available, and check Stock History if a quantity does not look right.</li>
+                    <li><strong class="text-slate-900">If you cannot see an action,</strong> it may be restricted to admins. Ask your administrator to confirm your role rather than sharing another person's login.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="getting-started" class="scroll-mt-6">
+        <div class="mb-4 flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-100 text-emerald-800"><i class="fa-solid fa-compass"></i></span>
+            <div><h3 class="text-lg font-bold text-slate-950">Getting started</h3><p class="text-sm text-slate-500">The usual order for setting up and using the system</p></div>
+        </div>
+        <ol class="grid gap-3 md:grid-cols-3">
+            <li class="border-l-2 border-emerald-600 bg-white p-4"><span class="text-xs font-bold uppercase text-emerald-700">01 / Prepare</span><p class="mt-2 text-sm leading-5 text-slate-700">Admins set up categories, products, prices, and opening stock. Add customers as needed.</p></li>
+            <li class="border-l-2 border-sky-600 bg-white p-4"><span class="text-xs font-bold uppercase text-sky-700">02 / Transact</span><p class="mt-2 text-sm leading-5 text-slate-700">Create a quotation for approval or issue an invoice for a completed sale. Record payments against invoices.</p></li>
+            <li class="border-l-2 border-amber-600 bg-white p-4"><span class="text-xs font-bold uppercase text-amber-700">03 / Review</span><p class="mt-2 text-sm leading-5 text-slate-700">Check stock history and reports to reconcile inventory and follow sales activity.</p></li>
+        </ol>
+    </section>
+
+    <section id="inventory" class="scroll-mt-6 border-t border-slate-200 pt-7">
+        <div class="mb-5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-md bg-sky-100 text-sky-800"><i class="fa-solid fa-boxes-stacked"></i></span><div><h3 class="text-lg font-bold text-slate-950">Inventory</h3><p class="text-sm text-slate-500">Keep the catalog and stock quantities accurate</p></div></div>
+            <a href="{% url 'inventory:product_list' %}" class="shrink-0 text-sm font-semibold text-emerald-800 hover:text-emerald-950">Open inventory <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a>
+        </div>
+        <div class="grid gap-4 lg:grid-cols-2">
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Create a category and product <span class="ml-1 text-xs font-semibold uppercase text-amber-700">Admin</span></h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Open <a class="font-semibold text-emerald-800" href="{% url 'inventory:category_list' %}">Categories</a> and add a category name; description is optional.</li>
+                    <li>Return to <a class="font-semibold text-emerald-800" href="{% url 'inventory:product_list' %}">Inventory</a> and choose <strong>Add Product</strong>.</li>
+                    <li>Enter the product name, category, cost price, selling price, and reorder level. Leave SKU blank to generate one.</li>
+                    <li>Enter starting stock if this is a new item, then save. Starting quantity is recorded in stock history.</li>
+                </ol>
+            </article>
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Receive more stock <span class="ml-1 text-xs font-semibold uppercase text-amber-700">Admin</span></h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Open <a class="font-semibold text-emerald-800" href="{% url 'inventory:stock_in' %}">Stock-In</a> from Inventory.</li>
+                    <li>Select the product and enter the quantity received. Add a supplier or purchase-order reference when available.</li>
+                    <li>Submit the stock-in. Review the new entry under <a class="font-semibold text-emerald-800" href="{% url 'inventory:stock_movement_list' %}">Stock History</a>.</li>
+                </ol>
+                <p class="mt-4 border-t border-slate-100 pt-3 text-xs leading-5 text-slate-500">Sales of catalog products deduct stock when an invoice is issued. Draft invoices and quotations do not deduct stock.</p>
+            </article>
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Import products from Excel <span class="ml-1 text-xs font-semibold uppercase text-amber-700">Admin</span></h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Choose <strong>Import Excel</strong> on the Inventory page.</li>
+                    <li>Select an `.xlsx` or `.xls` file and submit it.</li>
+                    <li>Review the import result, then check product records and quantities in Inventory.</li>
+                </ol>
+            </article>
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Find low or out-of-stock items</h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Open Inventory and use the stock-level filter, category filter, or product search.</li>
+                    <li>Choose Low Stock or Out of Stock to narrow the list.</li>
+                    <li>Admins can open a product and use Stock-In to record replenishment.</li>
+                </ol>
+            </article>
+        </div>
+    </section>
+
+    <section id="customers" class="scroll-mt-6 border-t border-slate-200 pt-7">
+        <div class="mb-5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-md bg-violet-100 text-violet-800"><i class="fa-solid fa-users"></i></span><div><h3 class="text-lg font-bold text-slate-950">Customers</h3><p class="text-sm text-slate-500">Maintain customer contact and account details</p></div></div>
+            <a href="{% url 'customers:customer_list' %}" class="shrink-0 text-sm font-semibold text-emerald-800 hover:text-emerald-950">Open customers <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a>
+        </div>
+        <div class="bg-white p-5">
+            <ol class="grid gap-x-8 gap-y-3 text-sm leading-5 text-slate-600 md:grid-cols-2">
+                <li><strong class="text-slate-900">1.</strong> Open Customers and choose Add Customer.</li>
+                <li><strong class="text-slate-900">2.</strong> Enter the person or company name; account number, phone, email, address, and notes can also be recorded.</li>
+                <li><strong class="text-slate-900">3.</strong> Save, then search the customer list by name or account details to find the record later.</li>
+                <li><strong class="text-slate-900">4.</strong> Open the customer record to review its details and related sales, or edit the record to keep contact information current.</li>
+            </ol>
+        </div>
+    </section>
+
+    <section id="sales" class="scroll-mt-6 border-t border-slate-200 pt-7">
+        <div class="mb-5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-md bg-amber-100 text-amber-800"><i class="fa-solid fa-file-invoice-dollar"></i></span><div><h3 class="text-lg font-bold text-slate-950">Sales, invoices, and receipts</h3><p class="text-sm text-slate-500">Create documents, record payments, and print customer copies</p></div></div>
+            <a href="{% url 'sales:invoice_list' %}" class="shrink-0 text-sm font-semibold text-emerald-800 hover:text-emerald-950">Open sales <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a>
+        </div>
+        <div class="grid gap-4 lg:grid-cols-2">
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Prepare a quotation</h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Open <a class="font-semibold text-emerald-800" href="{% url 'sales:quotation_list' %}">Quotations</a> and select Create Quotation.</li>
+                    <li>Select an existing customer, add a new customer, or leave the customer blank for a walk-in.</li>
+                    <li>Add catalog products or ad-hoc items, then set quantities, discount, dates, and customer terms.</li>
+                    <li>Save as a draft or create the quotation. Open it to print or, when approved, convert it to an invoice.</li>
+                </ol>
+                <p class="mt-4 border-t border-slate-100 pt-3 text-xs leading-5 text-slate-500">Quotation tax is calculated at 16%. Creating or converting a quotation does not deduct stock; conversion to an invoice does.</p>
+            </article>
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Issue an invoice</h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Open <a class="font-semibold text-emerald-800" href="{% url 'sales:invoice_list' %}">Sales &amp; Invoices</a> and start a new invoice.</li>
+                    <li>Select a customer, or leave the customer empty for a walk-in sale. Set issue and optional due dates.</li>
+                    <li>Add catalog products or custom line items. Confirm quantities, prices, discount, tax, and notes.</li>
+                    <li>Save as a draft to continue later, or issue the invoice to finalize the sale.</li>
+                    <li>Open the invoice to print it, record payment, and review its current balance.</li>
+                </ol>
+            </article>
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Record a payment and issue a receipt</h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Open the invoice and choose the payment action.</li>
+                    <li>Enter a positive amount no greater than the balance due, then select the payment method and add a reference if needed.</li>
+                    <li>Save the payment. Partial payments update the balance and status.</li>
+                    <li>When the balance reaches zero, the system generates an official receipt. Open the receipt from the invoice to print it.</li>
+                </ol>
+            </article>
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Locate or print a sales document</h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Use the Invoices or Quotations list to search and filter documents.</li>
+                    <li>Open a document to view its items, status, customer, payments, and balance.</li>
+                    <li>Use its print action for a customer copy; completed payments also provide a receipt print action.</li>
+                </ol>
+            </article>
+        </div>
+    </section>
+
+    {% if user.is_admin_role %}
+    <section id="administration" class="scroll-mt-6 border-t border-slate-200 pt-7">
+        <div class="mb-5 flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-md bg-rose-100 text-rose-800"><i class="fa-solid fa-user-gear"></i></span><div><h3 class="text-lg font-bold text-slate-950">Administration</h3><p class="text-sm text-slate-500">Admin-only controls for staff and business reporting</p></div></div>
+        <div class="grid gap-4 lg:grid-cols-2">
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Create or update a staff account</h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Open <a class="font-semibold text-emerald-800" href="{% url 'accounts:user_list' %}">Staff Management</a> and choose Add User.</li>
+                    <li>Enter the login details and select the role: Admin for management access or Cashier for daily sales access.</li>
+                    <li>Save the account. Use Edit to update details or the account status control to disable or re-enable access.</li>
+                    <li>Give the new staff member their login details securely. Do not share administrator credentials.</li>
+                </ol>
+            </article>
+            <article class="bg-white p-5">
+                <h4 class="font-bold text-slate-900">Run and export reports</h4>
+                <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-slate-600">
+                    <li>Open <a class="font-semibold text-emerald-800" href="{% url 'reports:center' %}">Reports</a>.</li>
+                    <li>Set the available reporting period and filters, then review the sales and inventory summaries.</li>
+                    <li>Use the print view for a paper/PDF copy, or export sales data to CSV or Excel for further analysis.</li>
+                </ol>
+            </article>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="border-t border-slate-200 pt-5">
+        <h3 class="text-sm font-bold uppercase tracking-wide text-slate-800">Good operating habits</h3>
+        <ul class="mt-3 grid gap-2 text-sm leading-5 text-slate-600 md:grid-cols-2">
+            <li><i class="fa-solid fa-check mr-2 text-emerald-700"></i>Record each delivery through Stock-In so stock history remains traceable.</li>
+            <li><i class="fa-solid fa-check mr-2 text-emerald-700"></i>Use drafts while details are being confirmed; issued invoices deduct catalog stock.</li>
+            <li><i class="fa-solid fa-check mr-2 text-emerald-700"></i>Record payments against the invoice so balances and receipts stay in sync.</li>
+            <li><i class="fa-solid fa-check mr-2 text-emerald-700"></i>Check the stock movement history when quantities need to be reconciled.</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}

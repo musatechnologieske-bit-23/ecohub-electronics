@@ -16,15 +16,12 @@ VAT_RATE = Decimal('0.16')
 
 
 def _document_print_context(request, document):
-    """Build shared printable details, including amount-based payment notes."""
-    deposit = (document.total * Decimal('0.85')).quantize(Decimal('0.01'))
-    balance = document.total - deposit
+    """Build shared printable details, including optional customer terms."""
     default_notes = (
         f"Delivery:\n"
-        f"- Payment of confirmed quoted amount\n"
+        f"- Delivery and installation schedule to be agreed.\n"
         f"Payment:\n"
-        f"- 85% payment of the quoted amount: KSh {deposit:,.2f} before delivery and installation works commence.\n"
-        f"- 15% balance: KSh {balance:,.2f} payable after installation works completion and commissioning of the project.\n\n"
+        f"- Payment schedule to be agreed with the customer.\n\n"
         "Warranty: as per the manufacturers' and Ecohub warranty terms."
     )
     default_signature = request.user.get_full_name() or request.user.get_username()

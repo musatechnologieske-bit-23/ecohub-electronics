@@ -3,6 +3,7 @@ Django settings for Ecohub project.
 """
 
 from pathlib import Path
+from urllib.parse import urlparse
 import os
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
@@ -10,7 +11,8 @@ from django.core.exceptions import ImproperlyConfigured
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
+# Load environment variables from .env file (only present locally;
+# on Railway, variables come from the platform directly and this is a no-op)
 load_dotenv(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
@@ -85,16 +87,70 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# ---------------------------------------------------------------------------
 # Database
-# Connects to MySQL using environment variables
+#
+# On Railway, we read the single MYSQL_URL connection string that Railway
+# auto-generates when a MySQL database is attached to this service
+# (mysql://user:password@host:port/database). This avoids relying on
+# individually-named DB_* reference variables, which are easy to mismatch
+# against Railway's actual variable names.
+#
+# Locally (DEBUG=True), we fall back to DB_NAME / DB_USER / DB_PASSWORD /
+# DB_HOST / DB_PORT from your .env file as before.
+#
+# In production (DEBUG=False), if neither MYSQL_URL nor a complete set of
+# DB_* variables resolves to real values, we fail loudly here with a clear
+# error instead of silently defaulting to 127.0.0.1/localhost and producing
+# a confusing connection-refused error deep inside PyMySQL.
+# ---------------------------------------------------------------------------
+
+MYSQL_URL = os.getenv('MYSQL_URL', '').strip()
+
+if MYSQL_URL:
+    parsed = urlparse(MYSQL_URL)
+    DB_NAME = parsed.path.lstrip('/')
+    DB_USER = parsed.username or 'root'
+    DB_PASSWORD = parsed.password or ''
+    DB_HOST = parsed.hostname or ''
+    DB_PORT = str(parsed.port or 3306)
+else:
+    DB_NAME = os.getenv('DB_NAME', '').strip()
+    DB_USER = os.getenv('DB_USER', '').strip()
+    DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+    DB_HOST = os.getenv('DB_HOST', '').strip()
+    DB_PORT = os.getenv('DB_PORT', '').strip()
+
+    if DEBUG:
+        # Sensible local defaults so `runserver` works out of the box on a dev machine
+        DB_NAME = DB_NAME or 'ecohub'
+        DB_USER = DB_USER or 'root'
+        DB_HOST = DB_HOST or '127.0.0.1'
+        DB_PORT = DB_PORT or '3306'
+
+if not DEBUG:
+    missing = [
+        name for name, value in [
+            ('DB_NAME', DB_NAME),
+            ('DB_USER', DB_USER),
+            ('DB_HOST', DB_HOST),
+            ('DB_PORT', DB_PORT),
+        ] if not value
+    ]
+    if missing:
+        raise ImproperlyConfigured(
+            f"Missing or empty required database settings: {', '.join(missing)}. "
+            "Ensure MYSQL_URL (or DB_NAME/DB_USER/DB_HOST/DB_PORT) is set on the Railway service."
+        )
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQLDATABASE') or os.getenv('DB_NAME', 'ecohub'),
-        'USER': os.getenv('MYSQLUSER') or os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('MYSQLPASSWORD') or os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('MYSQLHOST') or os.getenv('DB_HOST', '127.0.0.1'),
-        'PORT': os.getenv('MYSQLPORT') or os.getenv('DB_PORT', '3306'),
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -107,18 +163,10 @@ AUTH_USER_MODEL = 'accounts.User'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # Internationalization

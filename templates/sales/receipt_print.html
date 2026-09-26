@@ -21,7 +21,7 @@
         .muted { color: #64748b; font-size: 11px; }
         .footer { border-top: 1px solid #cbd5e1; color: #64748b; font-size: 10px; margin-top: 22px; padding-top: 9px; text-align: center; }
         .bank-table { border: 1px solid #9ca3af; margin-top: 14px; table-layout: fixed; width: 100%; } .bank-table td { border: 1px solid #9ca3af; font-size: 10px; line-height: 1.4; padding: 7px; vertical-align: top; } .bank-title { display: block; font-weight: 700; margin-bottom: 3px; }
-        .signature { margin: 18px 0 0 auto; text-align: center; width: 150px; } .signature-script { color: #111827; font-family: "Dancing Script", cursive; font-size: 26px; font-weight: 600; line-height: 1; min-height: 27px; white-space: nowrap; } .signature-line { border-bottom: 1px solid #172033; margin: 2px 0 4px; } .signature-name { font-size: 10px; font-weight: 700; }
+        .signature { margin: 18px 0 0 auto; text-align: center; width: 150px; } .signature-script { color: #111827; font-family: "Dancing Script", cursive; font-size: 26px; font-weight: 600; line-height: 1; min-height: 27px; white-space: nowrap; } .signature-line { border-bottom: 1px solid #172033; margin: 2px 0 4px; }
         @media print { .toolbar { display: none; } }
     </style>
 </head>
@@ -43,7 +43,7 @@
     <div class="line total"><span>Total received</span><span>KES {{ invoice.total_paid|floatformat:2 }}</span></div>
     <p style="margin-top:14px"><strong>Balance due:</strong> KES {{ invoice.balance_due|floatformat:2 }}</p>
     <table class="bank-table"><tbody><tr><td><span class="bank-title">Payable To</span>Ecohub Energy Africa Limited<br>P.O. Box 20504 - 00100 Nairobi</td><td><span class="bank-title">Banking Details</span>NCBA BANK<br>Bank Code: 07000<br>Branch: GREENSPAN MALL (0700)<br>SWIFT/IBAN: CBAFKENX<br>Account No: 5444810016</td><td><span class="bank-title">Other Details</span>Beneficiary: ECOHUB ENERGY AFRICA LTD<br>Currency: Kenya Shillings<br>Receipt: {{ receipt.receipt_number }}</td></tr></tbody></table>
-    <div class="signature"><div class="signature-script">{{ print_user }}</div><div class="signature-line"></div><div class="signature-name">{{ print_user }}</div><div>Authorized signature</div></div>
+    <div class="signature"><div class="signature-script">{{ print_user }}</div><div class="signature-line"></div><div>Authorized signature</div></div>
     <div class="footer">Thank you for your payment.</div>
 </body>
 </html>

@@ -1,10 +1,12 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, RequestFactory
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.template.loader import render_to_string
 from decimal import Decimal
 import json
 
 from sales.models import Document, DocumentItem, Payment, Receipt
+from sales.views import _document_print_context
 from inventory.models import Product, StockMovement
 from customers.models import Customer
 
@@ -36,6 +38,43 @@ class SalesFlowTests(TestCase):
             reference='Initial Restock',
             created_by=self.cashier
         )
+
+    def test_print_terms_are_optional_and_signature_is_not_repeated_below_line(self):
+        invoice = Document.objects.create(
+            doc_type=Document.DocType.INVOICE,
+            doc_number='INV-PRINT-1',
+            customer=self.customer,
+            total=Decimal('100.00'),
+            created_by=self.cashier,
+        )
+        request = RequestFactory().get('/')
+        request.user = self.cashier
+
+        context = _document_print_context(request, invoice)
+        self.assertNotIn('85%', context['print_notes'])
+        self.assertNotIn('15%', context['print_notes'])
+        self.assertIn('Payment schedule to be agreed', context['print_notes'])
+
+        invoice.notes = '30% deposit, remaining 70% on completion.'
+        invoice.save(update_fields=['notes'])
+        context = _document_print_context(request, invoice)
+        self.assertEqual(context['print_notes'], invoice.notes)
+
+        printed_document = render_to_string('sales/document_print.html', context)
+        self.assertEqual(printed_document.count(self.cashier.username), 1)
+        self.assertIn('Authorized signature', printed_document)
+        self.assertNotIn('signature-name', printed_document)
+
+        receipt = Receipt.objects.create(invoice=invoice, receipt_number='RCP-PRINT-1')
+        printed_receipt = render_to_string('sales/receipt_print.html', {
+            'invoice': invoice,
+            'receipt': receipt,
+            'payments': [],
+            'print_user': self.cashier.username,
+        })
+        self.assertEqual(printed_receipt.count(self.cashier.username), 1)
+        self.assertIn('Authorized signature', printed_receipt)
+        self.assertNotIn('signature-name', printed_receipt)
 
     def test_doc_number_generation(self):
         doc_num1 = Document.generate_next_number(Document.DocType.INVOICE)

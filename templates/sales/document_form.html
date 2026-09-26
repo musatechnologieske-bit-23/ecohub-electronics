@@ -138,8 +138,9 @@
                     <label for="notes" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                         Customer Notes / Terms
                     </label>
-                    <textarea name="notes" id="notes" rows="3" placeholder="Payment terms, warranty notes, or special instructions..."
+                        <textarea name="notes" id="notes" rows="3" placeholder="Optional payment schedule, warranty notes, or special instructions..."
                               class="block w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                    <p class="mt-1 text-xs text-slate-500">Add any agreed payment percentages or milestones here, or leave blank to use the standard terms.</p>
                 </div>
 
                 <!-- Totals Box -->
@@ -357,14 +358,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     `}
                 </td>
                 <td class="px-4 py-3 text-center">
-                    <input type="number" min="1" value="${item.quantity}"
+                        <input type="number" min="1" step="1" required inputmode="numeric" aria-label="Item quantity" value="${item.quantity}"
                            class="item-qty-input w-20 text-center px-2 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </td>
                 <td class="px-4 py-3 text-right">
-                    <input type="number" step="0.01" min="0" value="${item.unit_price}"
+                    <input type="number" step="0.01" min="0" required inputmode="decimal" aria-label="Item unit price in Kenyan shillings" value="${item.unit_price}"
                            class="item-price-input w-24 text-right px-2 py-1.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </td>
-                <td class="px-4 py-3 text-right font-mono font-bold text-slate-900">
+                <td class="item-total-cell px-4 py-3 text-right font-mono font-bold text-slate-900">
                     KSh ${lineTotal}
                 </td>
                 <td class="px-4 py-3 text-center">
@@ -383,14 +384,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            tr.querySelector('.item-qty-input').addEventListener('input', (e) => {
-                item.quantity = parseInt(e.target.value) || 1;
-                renderItems();
+            const quantityInput = tr.querySelector('.item-qty-input');
+            quantityInput.addEventListener('input', (e) => {
+                item.quantity = e.target.value;
+                updateLineTotal(tr, item);
+                updateTotals();
+            });
+            quantityInput.addEventListener('change', () => {
+                if (!quantityInput.value || Number(quantityInput.value) < 1) {
+                    quantityInput.value = '1';
+                }
+                item.quantity = quantityInput.value;
+                updateLineTotal(tr, item);
+                updateTotals();
             });
 
-            tr.querySelector('.item-price-input').addEventListener('input', (e) => {
+            const priceInput = tr.querySelector('.item-price-input');
+            priceInput.addEventListener('input', (e) => {
                 item.unit_price = e.target.value;
-                renderItems();
+                updateLineTotal(tr, item);
+                updateTotals();
+            });
+            priceInput.addEventListener('change', () => {
+                if (priceInput.value === '') {
+                    priceInput.value = '0.00';
+                }
+                item.unit_price = priceInput.value;
+                updateLineTotal(tr, item);
+                updateTotals();
             });
 
             tr.querySelector('.btn-remove-item').addEventListener('click', () => {
@@ -404,11 +425,20 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTotals();
     }
 
+    function updateLineTotal(row, item) {
+        const quantity = Number.parseInt(item.quantity, 10);
+        const price = Number.parseFloat(item.unit_price);
+        const lineTotal = (Number.isFinite(quantity) ? quantity : 0) * (Number.isFinite(price) ? price : 0);
+        row.querySelector('.item-total-cell').textContent = 'KSh ' + lineTotal.toFixed(2);
+    }
+
     function updateTotals() {
         let subtotal = 0;
         lineItems.forEach(item => {
-            const qty = parseInt(item.quantity) || 1;
-            const price = parseFloat(item.unit_price) || 0;
+            const parsedQuantity = Number.parseInt(item.quantity, 10);
+            const parsedPrice = Number.parseFloat(item.unit_price);
+            const qty = Number.isFinite(parsedQuantity) ? parsedQuantity : 0;
+            const price = Number.isFinite(parsedPrice) ? parsedPrice : 0;
             subtotal += qty * price;
         });
 
@@ -448,6 +478,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Please enter a description for all custom ad-hoc items.');
                 return;
             }
+        }
+
+        if (!documentForm.reportValidity()) {
+            return;
         }
 
         updateTotals();

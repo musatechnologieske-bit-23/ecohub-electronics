@@ -7,6 +7,12 @@ from reports.views import dashboard
 def health(request):
     return HttpResponse('ok')
 
+
+@login_required
+def reference_guide(request):
+    return render(request, 'reference_guide.html')
+
+
 @login_required
 def home(request):
     return dashboard(request)

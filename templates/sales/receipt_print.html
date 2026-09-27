@@ -8,19 +8,19 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600&display=swap">
     <style>
         @page { size: A5; margin: 12mm; }
-        body { color: #172033; font: 13px Arial, sans-serif; margin: 0; }
+        body { color: #172033; font: 14px Arial, sans-serif; margin: 0; }
         .toolbar { margin-bottom: 16px; text-align: right; }
         button { background: #047857; border: 0; border-radius: 5px; color: #fff; padding: 9px 14px; }
         header { border-bottom: 2px solid #047857; padding-bottom: 12px; }
-        h1 { align-items: center; color: #047857; display: flex; font-size: 20px; gap: 8px; margin: 0 0 4px; }
+        h1 { align-items: center; color: #047857; display: flex; font-size: 22px; gap: 8px; margin: 0 0 4px; }
         h1 img { border-radius: 50%; height: 38px; object-fit: cover; width: 38px; }
         h2 { margin: 18px 0 4px; text-transform: uppercase; }
         p { margin: 5px 0; }
         .line { border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; padding: 8px 0; }
-        .total { border-top: 2px solid #172033; font-size: 17px; font-weight: bold; margin-top: 10px; padding-top: 10px; }
-        .muted { color: #64748b; font-size: 11px; }
-        .footer { border-top: 1px solid #cbd5e1; color: #64748b; font-size: 10px; margin-top: 22px; padding-top: 9px; text-align: center; }
-        .bank-table { border: 1px solid #9ca3af; margin-top: 14px; table-layout: fixed; width: 100%; } .bank-table td { border: 1px solid #9ca3af; font-size: 10px; line-height: 1.4; padding: 7px; vertical-align: top; } .bank-title { display: block; font-weight: 700; margin-bottom: 3px; }
+        .total { border-top: 2px solid #172033; font-size: 18px; font-weight: bold; margin-top: 10px; padding-top: 10px; }
+        .muted { color: #64748b; font-size: 12px; }
+        .footer { border-top: 1px solid #cbd5e1; color: #64748b; font-size: 11px; margin-top: 22px; padding-top: 9px; text-align: center; }
+        .bank-table { border: 1px solid #9ca3af; margin-top: 14px; table-layout: fixed; width: 100%; } .bank-table td { border: 1px solid #9ca3af; font-size: 11px; line-height: 1.4; padding: 7px; vertical-align: top; } .bank-title { display: block; font-weight: 700; margin-bottom: 3px; }
         .signature { margin: 18px 0 0 auto; text-align: center; width: 150px; } .signature-script { color: #111827; font-family: "Dancing Script", cursive; font-size: 26px; font-weight: 600; line-height: 1; min-height: 27px; white-space: nowrap; } .signature-line { border-bottom: 1px solid #172033; margin: 2px 0 4px; }
         @media print { .toolbar { display: none; } }
     </style>
@@ -29,7 +29,7 @@
     <div class="toolbar"><button onclick="window.print()">Print receipt</button></div>
     <header>
         <h1><img src="{% static 'logo.jpeg' %}" alt="Ecohub Energy Africa Limited">Ecohub Energy Africa Limited</h1>
-        <div class="muted">Energy &amp; technology solutions | Nairobi, Kenya | 0748891464 | info@ecohubenergyafrica.com</div>
+        <div class="muted">Energy &amp; technology solutions | Nairobi, Kenya | +254 748 891 464 | info@ecohubenergyafrica.com</div>
     </header>
     <h2>Official Receipt</h2>
     <p><strong>{{ receipt.receipt_number }}</strong></p>

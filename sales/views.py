@@ -15,6 +15,18 @@ from weasyprint import HTML
 VAT_RATE = Decimal('0.16')
 
 
+def _format_kenyan_phone(phone):
+    phone = (phone or '').strip()
+    digits = ''.join(character for character in phone if character.isdigit())
+    if digits.startswith('254'):
+        return f'+{digits}'
+    if digits.startswith('0'):
+        return f'+254{digits[1:]}'
+    if len(digits) == 9:
+        return f'+254{digits}'
+    return phone
+
+
 def _document_print_context(request, document):
     """Build shared printable details, including optional customer terms."""
     default_notes = (
@@ -27,6 +39,7 @@ def _document_print_context(request, document):
     signature_name = request.GET.get('signature_name', '').strip()
     return {
         'document': document,
+        'customer_phone': _format_kenyan_phone(document.customer.phone if document.customer else ''),
         'company_kra_pin': 'P052109923A',
         'items': document.items.select_related('product').all(),
         'payments': document.payments.select_related('received_by').all(),
@@ -155,6 +168,7 @@ def receipt_print(request, pk):
         return HttpResponse('Please provide a signature name or select the logged-in user.', status=400)
     return render(request, 'sales/receipt_print.html', {
         'invoice': invoice,
+        'customer_phone': _format_kenyan_phone(invoice.customer.phone if invoice.customer else ''),
         'receipt': receipt,
         'payments': invoice.payments.select_related('received_by').all(),
         'print_user': signature_name or request.user.get_full_name() or request.user.get_username(),

@@ -196,6 +196,40 @@ class SalesFlowTests(TestCase):
         self.product.refresh_from_db()
         self.assertEqual(self.product.quantity_in_stock, 45)  # 50 - 5
 
+    def test_unconverted_quotation_can_be_deleted(self):
+        self.client.login(username='cashier_sales', password='password123')
+        quotation = Document.objects.create(
+            doc_type=Document.DocType.QUOTATION,
+            doc_number='QT-DELETE-1',
+            customer=self.customer,
+            status=Document.Status.SENT,
+        )
+
+        response = self.client.post(reverse('sales:quotation_delete', args=[quotation.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Document.objects.filter(pk=quotation.pk).exists())
+
+    def test_converted_quotation_cannot_be_deleted(self):
+        self.client.login(username='cashier_sales', password='password123')
+        quotation = Document.objects.create(
+            doc_type=Document.DocType.QUOTATION,
+            doc_number='QT-DELETE-2',
+            customer=self.customer,
+            status=Document.Status.CONVERTED,
+        )
+        Document.objects.create(
+            doc_type=Document.DocType.INVOICE,
+            doc_number='INV-FROM-QT-DELETE-2',
+            customer=self.customer,
+            converted_from=quotation,
+        )
+
+        response = self.client.post(reverse('sales:quotation_delete', args=[quotation.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Document.objects.filter(pk=quotation.pk).exists())
+
     def test_quotation_can_create_and_capture_new_customer(self):
         self.client.login(username='cashier_sales', password='password123')
         items_payload = [{

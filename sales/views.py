@@ -114,6 +114,20 @@ def quotation_list(request):
 
 
 @login_required
+@require_POST
+def quotation_delete(request, pk):
+    quotation = get_object_or_404(Document, pk=pk, doc_type=Document.DocType.QUOTATION)
+    if quotation.status == Document.Status.CONVERTED or quotation.converted_invoices.exists():
+        messages.error(request, 'Converted quotations cannot be deleted because they are linked to invoices.')
+        return redirect('sales:quotation_list')
+
+    quotation_number = quotation.doc_number
+    quotation.delete()
+    messages.success(request, f"Quotation '{quotation_number}' was deleted.")
+    return redirect('sales:quotation_list')
+
+
+@login_required
 def document_detail(request, pk):
     """View invoice or quotation details, items, payments, and receipt."""
     document = get_object_or_404(

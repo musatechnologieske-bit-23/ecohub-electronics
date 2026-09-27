@@ -86,6 +86,21 @@ def _month_window(today):
 	return months
 
 
+def _invoice_gross_profit(invoices):
+	zero = Decimal('0.00')
+	totals = invoices.aggregate(subtotal=Sum('subtotal'), discounts=Sum('discount'))
+	product_cost = DocumentItem.objects.filter(document__in=invoices).aggregate(
+		total=Sum(ExpressionWrapper(
+			F('quantity') * Coalesce(
+				F('product__cost_price'),
+				Value(zero, output_field=DecimalField(max_digits=10, decimal_places=2)),
+			),
+			output_field=DecimalField(max_digits=14, decimal_places=2),
+		))
+	)['total'] or zero
+	return (totals['subtotal'] or zero) - (totals['discounts'] or zero) - product_cost
+
+
 def _dashboard_context():
 	today = timezone.localdate()
 	current_hour = timezone.localtime().hour
@@ -112,6 +127,20 @@ def _dashboard_context():
 	revenue_change = Decimal('0.00')
 	if previous_revenue:
 		revenue_change = ((current_revenue - previous_revenue) / previous_revenue) * 100
+	current_profit = _invoice_gross_profit(invoices.filter(
+		issue_date__year=current_month.year, issue_date__month=current_month.month
+	))
+	previous_profit = _invoice_gross_profit(invoices.filter(
+		issue_date__year=previous_month.year, issue_date__month=previous_month.month
+	))
+	profit_change = Decimal('0.00')
+	if previous_profit:
+		profit_change = ((current_profit - previous_profit) / previous_profit) * 100
+	open_quotations = Document.objects.filter(
+		doc_type=Document.DocType.QUOTATION,
+		status__in=[Document.Status.DRAFT, Document.Status.SENT],
+	)
+	open_quotation_total = open_quotations.aggregate(total=Sum('total'))['total'] or Decimal('0.00')
 
 	outstanding = invoices.filter(
 		status__in=[Document.Status.UNPAID, Document.Status.PARTIALLY_PAID]
@@ -150,6 +179,10 @@ def _dashboard_context():
 		'total_revenue': invoices.aggregate(total=Sum('total'))['total'] or Decimal('0.00'),
 		'current_revenue': current_revenue,
 		'revenue_change': revenue_change,
+		'current_profit': current_profit,
+		'profit_change': profit_change,
+		'open_quotation_total': open_quotation_total,
+		'open_quotation_count': open_quotations.count(),
 		'outstanding': outstanding,
 		'invoice_count': invoices.count(),
 		'customer_count': Customer.objects.count(),

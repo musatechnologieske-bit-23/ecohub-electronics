@@ -128,6 +128,114 @@ def quotation_delete(request, pk):
 
 
 @login_required
+def quotation_edit(request, pk):
+    quotation = get_object_or_404(
+        Document.objects.select_related('customer'),
+        pk=pk,
+        doc_type=Document.DocType.QUOTATION,
+    )
+    if quotation.status in [Document.Status.CONVERTED, Document.Status.CANCELLED] or quotation.converted_invoices.exists():
+        messages.error(request, 'Converted or cancelled quotations cannot be edited.')
+        return redirect('sales:document_detail', pk=quotation.pk)
+
+    customers = Customer.objects.all().order_by('name')
+    products = Product.objects.filter(is_active=True).order_by('name')
+    initial_items = [
+        {
+            'product_id': item.product_id,
+            'description': item.description,
+            'sku': item.product.sku if item.product else None,
+            'quantity': item.quantity,
+            'unit_price': str(item.unit_price),
+            'is_adhoc': item.product_id is None,
+        }
+        for item in quotation.items.select_related('product').all()
+    ]
+
+    if request.method == 'POST':
+        try:
+            items_data = json.loads(request.POST.get('items_payload', '[]'))
+            if not isinstance(items_data, list) or not items_data:
+                raise ValueError
+            parsed_items = []
+            for item in items_data:
+                quantity = int(item.get('quantity', 0))
+                unit_price = Decimal(str(item.get('unit_price', '0')))
+                description = item.get('description', '').strip()
+                if quantity < 1 or unit_price < 0 or not description:
+                    raise ValueError
+                parsed_items.append((item.get('product_id'), description, quantity, unit_price))
+            discount = Decimal(request.POST.get('discount') or '0')
+            if discount < 0:
+                raise ValueError
+        except (json.JSONDecodeError, AttributeError, TypeError, ValueError, ArithmeticError):
+            messages.error(request, 'Please provide valid quotation details and at least one item.')
+            return redirect('sales:quotation_edit', pk=quotation.pk)
+
+        customer_id = request.POST.get('customer_id')
+        if customer_id == 'new':
+            customer_name = request.POST.get('new_customer_name', '').strip()
+            if not customer_name:
+                messages.error(request, 'Please enter the new customer name.')
+                return redirect('sales:quotation_edit', pk=quotation.pk)
+            customer = Customer.objects.create(
+                name=customer_name,
+                account_number=request.POST.get('new_customer_account_number', '').strip(),
+                phone=request.POST.get('new_customer_phone', '').strip(),
+                email=request.POST.get('new_customer_email', '').strip(),
+                kra_pin=request.POST.get('new_customer_kra_pin', '').strip().upper(),
+                address=request.POST.get('new_customer_address', '').strip(),
+            )
+        else:
+            customer = Customer.objects.filter(pk=customer_id).first() if customer_id else None
+
+        payment_term = request.POST.get('quotation_payment_term', Document.QuotationPaymentTerm.CASH)
+        if payment_term not in Document.QuotationPaymentTerm.values:
+            payment_term = Document.QuotationPaymentTerm.CASH
+
+        with transaction.atomic():
+            quotation.customer = customer
+            quotation.issue_date = request.POST.get('issue_date') or quotation.issue_date
+            quotation.due_date = request.POST.get('due_date') or None
+            quotation.quotation_payment_term = payment_term
+            quotation.discount = discount
+            quotation.notes = request.POST.get('notes', '').strip()
+            quotation.items.all().delete()
+
+            subtotal = Decimal('0.00')
+            for product_id, description, quantity, unit_price in parsed_items:
+                product = Product.objects.filter(pk=product_id).first() if product_id else None
+                line_total = Decimal(quantity) * unit_price
+                DocumentItem.objects.create(
+                    document=quotation,
+                    product=product,
+                    description=description,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    line_total=line_total,
+                )
+                subtotal += line_total
+
+            quotation.subtotal = subtotal
+            taxable_amount = max(Decimal('0.00'), subtotal - discount)
+            quotation.tax = (taxable_amount * VAT_RATE).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            quotation.total = max(Decimal('0.00'), subtotal - discount + quotation.tax)
+            quotation.save()
+
+        messages.success(request, f"Quotation '{quotation.doc_number}' has been updated.")
+        return redirect('sales:document_detail', pk=quotation.pk)
+
+    return render(request, 'sales/document_form.html', {
+        'doc_type': Document.DocType.QUOTATION,
+        'customers': customers,
+        'products': products,
+        'document': quotation,
+        'initial_items': initial_items,
+        'is_edit': True,
+    })
+
+
+@login_required
 def document_detail(request, pk):
     """View invoice or quotation details, items, payments, and receipt."""
     document = get_object_or_404(

@@ -210,6 +210,71 @@ class SalesFlowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Document.objects.filter(pk=quotation.pk).exists())
 
+    def test_unconverted_quotation_can_be_edited_without_deducting_stock(self):
+        self.client.login(username='cashier_sales', password='password123')
+        quotation = Document.objects.create(
+            doc_type=Document.DocType.QUOTATION,
+            doc_number='QT-EDIT-1',
+            customer=self.customer,
+            status=Document.Status.SENT,
+            quotation_payment_term=Document.QuotationPaymentTerm.CREDIT,
+            created_by=self.cashier,
+        )
+        DocumentItem.objects.create(
+            document=quotation,
+            product=self.product,
+            description=self.product.name,
+            quantity=1,
+            unit_price=Decimal('25.00'),
+            line_total=Decimal('25.00'),
+        )
+
+        edit_url = reverse('sales:quotation_edit', args=[quotation.pk])
+        edit_response = self.client.get(edit_url)
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertContains(edit_response, 'name="quotation_payment_term" value="credit" checked')
+        self.assertContains(edit_response, '"product_id": %s' % self.product.pk)
+
+        response = self.client.post(edit_url, {
+            'customer_id': self.customer.pk,
+            'issue_date': '2026-09-28',
+            'quotation_payment_term': 'approved',
+            'discount': '10.00',
+            'notes': 'Updated quote notes',
+            'items_payload': json.dumps([{
+                'product_id': self.product.pk,
+                'description': self.product.name,
+                'quantity': 3,
+                'unit_price': '40.00',
+            }]),
+        })
+
+        self.assertRedirects(response, reverse('sales:document_detail', args=[quotation.pk]))
+        quotation.refresh_from_db()
+        self.assertEqual(quotation.status, Document.Status.SENT)
+        self.assertEqual(quotation.quotation_payment_term, Document.QuotationPaymentTerm.APPROVED)
+        self.assertEqual(quotation.subtotal, Decimal('120.00'))
+        self.assertEqual(quotation.tax, Decimal('17.60'))
+        self.assertEqual(quotation.total, Decimal('127.60'))
+        self.assertEqual(quotation.notes, 'Updated quote notes')
+        self.assertEqual(quotation.items.get().quantity, 3)
+        self.assertEqual(self.product.quantity_in_stock, 50)
+        self.assertFalse(StockMovement.objects.filter(movement_type=StockMovement.MovementType.SALE).exists())
+
+    def test_converted_quotation_cannot_be_edited(self):
+        self.client.login(username='cashier_sales', password='password123')
+        quotation = Document.objects.create(
+            doc_type=Document.DocType.QUOTATION,
+            doc_number='QT-EDIT-CONVERTED',
+            customer=self.customer,
+            status=Document.Status.CONVERTED,
+            created_by=self.cashier,
+        )
+
+        response = self.client.get(reverse('sales:quotation_edit', args=[quotation.pk]))
+
+        self.assertRedirects(response, reverse('sales:document_detail', args=[quotation.pk]))
+
     def test_converted_quotation_cannot_be_deleted(self):
         self.client.login(username='cashier_sales', password='password123')
         quotation = Document.objects.create(
@@ -282,6 +347,8 @@ class SalesFlowTests(TestCase):
         self.assertIn('A123456789Z', printed_document)
         self.assertIn('P052109923A', printed_document)
         self.assertIn('Payment terms:</strong> Approved', printed_document)
+        self.assertLess(printed_document.index('Authorized signature'), printed_document.index('Prepared by'))
+        self.assertLess(printed_document.index('Prepared by'), printed_document.index('Thank you for your business.'))
 
     def test_payments_and_auto_receipt_generation(self):
         self.client.login(username='cashier_sales', password='password123')

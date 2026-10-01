@@ -95,6 +95,11 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-1.5">
+                            {% if q.status != 'converted' and q.status != 'cancelled' %}
+                            <a href="{% url 'sales:quotation_edit' q.pk %}" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
+                                <i class="fa-solid fa-pen mr-1"></i> Edit
+                            </a>
+                            {% endif %}
                             <a href="{% url 'sales:document_detail' q.pk %}" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
                                 View
                             </a>

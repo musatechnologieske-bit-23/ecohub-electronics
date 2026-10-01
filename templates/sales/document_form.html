@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
-{% block title %}New {{ doc_type|title }} - Ecohub Energy Africa Limited{% endblock %}
-{% block header_title %}Create New {{ doc_type|title }}{% endblock %}
+{% block title %}{% if is_edit %}Edit{% else %}New{% endif %} {{ doc_type|title }} - Ecohub Energy Africa Limited{% endblock %}
+{% block header_title %}{% if is_edit %}Edit{% else %}Create New{% endif %} {{ doc_type|title }}{% endblock %}
 {% block header_subtitle %}
     {% if doc_type == 'invoice' %}
     Point-of-sale checkout and invoice generation
@@ -16,6 +16,7 @@
         {% csrf_token %}
         <input type="hidden" name="items_payload" id="items_payload" value="[]">
         <input type="hidden" name="action_type" id="action_type" value="issue">
+        {{ initial_items|default:'[]'|json_script:'initial-items' }}
 
         <!-- Header Card: Customer & Dates -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
@@ -36,7 +37,7 @@
                         <option value="">Walk-in Customer (No account)</option>
                         {% if doc_type == 'quotation' %}<option value="new">+ Add New Customer</option>{% endif %}
                         {% for c in customers %}
-                        <option value="{{ c.pk }}">{{ c.name }}{% if c.phone %} ({{ c.phone }}){% endif %}</option>
+                        <option value="{{ c.pk }}" {% if document.customer_id == c.pk %}selected{% endif %}>{{ c.name }}{% if c.phone %} ({{ c.phone }}){% endif %}</option>
                         {% endfor %}
                     </select>
                     <p class="text-xs text-slate-400 mt-1">{% if doc_type == 'quotation' %}Select an existing customer or add a new one.{% else %}Leave empty for walk-in retail sales.{% endif %}</p>
@@ -73,13 +74,13 @@
                     <legend class="block text-sm font-medium text-slate-700 mb-2">Quotation terms</legend>
                     <div class="flex flex-wrap gap-3">
                         <label class="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 has-[:checked]:text-emerald-900">
-                            <input type="radio" name="quotation_payment_term" value="cash" checked class="h-4 w-4 accent-emerald-700"> Cash
+                            <input type="radio" name="quotation_payment_term" value="cash" {% if not document or document.quotation_payment_term == 'cash' %}checked{% endif %} class="h-4 w-4 accent-emerald-700"> Cash
                         </label>
                         <label class="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 has-[:checked]:text-emerald-900">
-                            <input type="radio" name="quotation_payment_term" value="credit" class="h-4 w-4 accent-emerald-700"> Credit
+                            <input type="radio" name="quotation_payment_term" value="credit" {% if document.quotation_payment_term == 'credit' %}checked{% endif %} class="h-4 w-4 accent-emerald-700"> Credit
                         </label>
                         <label class="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 has-[:checked]:text-emerald-900">
-                            <input type="radio" name="quotation_payment_term" value="approved" class="h-4 w-4 accent-emerald-700"> Approved
+                            <input type="radio" name="quotation_payment_term" value="approved" {% if document.quotation_payment_term == 'approved' %}checked{% endif %} class="h-4 w-4 accent-emerald-700"> Approved
                         </label>
                     </div>
                 </fieldset>
@@ -90,7 +91,7 @@
                     <label for="issue_date" class="block text-sm font-medium text-slate-700 mb-1">
                         Issue Date
                     </label>
-                    <input type="date" name="issue_date" id="issue_date" value="{% now 'Y-m-d' %}" required
+                    <input type="date" name="issue_date" id="issue_date" value="{% if document %}{{ document.issue_date|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}" required
                            class="block w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
                 </div>
 
@@ -99,7 +100,7 @@
                     <label for="due_date" class="block text-sm font-medium text-slate-700 mb-1">
                         Due Date (Optional)
                     </label>
-                    <input type="date" name="due_date" id="due_date"
+                    <input type="date" name="due_date" id="due_date" value="{% if document.due_date %}{{ document.due_date|date:'Y-m-d' }}{% endif %}"
                            class="block w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
                     <p class="text-xs text-slate-400 mt-1">Payment deadline for invoices.</p>
                 </div>
@@ -158,7 +159,7 @@
                         Customer Notes / Terms
                     </label>
                         <textarea name="notes" id="notes" rows="3" placeholder="Optional payment schedule, warranty notes, or special instructions..."
-                              class="block w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                            class="block w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">{{ document.notes|default:'' }}</textarea>
                     <p class="mt-1 text-xs text-slate-500">Add any agreed payment percentages or milestones here, or leave blank to use the standard terms.</p>
                 </div>
 
@@ -171,13 +172,13 @@
 
                     <div class="flex items-center justify-between">
                         <span class="text-slate-600">Discount (KSh)</span>
-                        <input type="number" step="0.01" min="0" name="discount" id="input-discount" value="0.00"
+                        <input type="number" step="0.01" min="0" name="discount" id="input-discount" value="{% if document %}{{ document.discount }}{% else %}0.00{% endif %}"
                                class="w-28 text-right px-2 py-1 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
                     </div>
 
                     <div class="flex items-center justify-between">
                            <span class="text-slate-600">{% if doc_type == 'quotation' %}VAT (16%){% else %}Tax (KSh){% endif %}</span>
-                           <input type="number" step="0.01" min="0" name="tax" id="input-tax" value="0.00" {% if doc_type == 'quotation' %}readonly{% endif %}
+                           <input type="number" step="0.01" min="0" name="tax" id="input-tax" value="{% if document %}{{ document.tax }}{% else %}0.00{% endif %}" {% if doc_type == 'quotation' %}readonly{% endif %}
                                class="w-28 text-right px-2 py-1 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono {% if doc_type == 'quotation' %}bg-slate-100{% endif %}">
                     </div>
 
@@ -195,12 +196,12 @@
                class="px-5 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                 Cancel
             </a>
-            <button type="button" id="btn-save-draft" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
+            {% if not is_edit %}<button type="button" id="btn-save-draft" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
                 <i class="fa-regular fa-bookmark mr-1.5"></i> Save as Draft
-            </button>
+            </button>{% endif %}
             <button type="button" id="btn-submit-issue" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-md transition-colors">
                 <i class="fa-solid fa-check mr-1.5"></i>
-                {% if doc_type == 'invoice' %}Issue & Finalize Invoice{% else %}Create Quotation{% endif %}
+                {% if is_edit %}Save Changes{% elif doc_type == 'invoice' %}Issue & Finalize Invoice{% else %}Create Quotation{% endif %}
             </button>
         </div>
     </form>
@@ -236,7 +237,8 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let lineItems = [];
+    const initialItems = JSON.parse(document.getElementById('initial-items').textContent);
+    let lineItems = Array.isArray(initialItems) ? initialItems : [];
     const itemsBody = document.getElementById('items-body');
     const emptyPlaceholder = document.getElementById('no-items-placeholder');
     const displaySubtotal = document.getElementById('display-subtotal');
@@ -472,6 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
         itemsPayload.value = JSON.stringify(lineItems);
     }
 
+    renderItems();
     inputDiscount.addEventListener('input', updateTotals);
     inputTax.addEventListener('input', updateTotals);
 

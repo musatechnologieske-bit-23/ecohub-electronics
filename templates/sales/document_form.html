@@ -360,23 +360,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
             tr.innerHTML = `
                 <td class="px-4 py-3">
-                    ${item.is_adhoc ? `
-                        <div class="space-y-1">
+                    <div class="space-y-1">
+                        ${item.is_adhoc ? `
                             <div class="flex items-center space-x-2">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-2xs font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200">
                                     <i class="fa-solid fa-pen-ruler mr-1"></i> Custom / Ad-Hoc
                                 </span>
                                 <span class="text-2xs text-slate-400">Doesn't affect inventory</span>
                             </div>
-                            <input type="text" value="${item.description}" placeholder="Enter item description, labor, or service..."
-                                   class="item-desc-input block w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-                        </div>
-                    ` : `
-                        <div>
-                            <div class="font-semibold text-slate-900">${item.description}</div>
+                        ` : `
                             <div class="text-xs text-slate-500 font-mono">${item.sku} &bull; <span class="text-emerald-600 font-medium">Catalog Product</span></div>
-                        </div>
-                    `}
+                        `}
+                        <input type="text" value="${item.description}" placeholder="Enter item description, labor, or service..."
+                               class="item-desc-input block w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+                    </div>
                 </td>
                 <td class="px-4 py-3 text-center">
                         <input type="number" min="1" step="1" required inputmode="numeric" aria-label="Item quantity" value="${item.quantity}"
@@ -479,10 +476,13 @@ document.addEventListener('DOMContentLoaded', function() {
     inputTax.addEventListener('input', updateTotals);
 
     // Submission handlers
-    document.getElementById('btn-save-draft').addEventListener('click', function() {
-        actionTypeInput.value = 'draft';
-        submitForm();
-    });
+    const saveDraftButton = document.getElementById('btn-save-draft');
+    if (saveDraftButton) {
+        saveDraftButton.addEventListener('click', function() {
+            actionTypeInput.value = 'draft';
+            submitForm();
+        });
+    }
 
     document.getElementById('btn-submit-issue').addEventListener('click', function() {
         actionTypeInput.value = 'issue';

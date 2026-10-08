@@ -329,9 +329,8 @@ document.addEventListener('DOMContentLoaded', function() {
         renderItems();
     }
 
-    // Add Ad-Hoc / Custom Item
-    document.getElementById('btn-add-adhoc').addEventListener('click', function() {
-        lineItems.push({
+    function createAdhocItem() {
+        return {
             id: 'item_' + Date.now(),
             product_id: null,
             description: '',
@@ -339,8 +338,18 @@ document.addEventListener('DOMContentLoaded', function() {
             quantity: 1,
             unit_price: '0.00',
             is_adhoc: true,
-        });
+        };
+    }
+
+    function addAdhocItem(insertionIndex = lineItems.length) {
+        lineItems.splice(insertionIndex, 0, createAdhocItem());
         renderItems();
+        itemsBody.querySelectorAll('.item-desc-input')[insertionIndex]?.focus();
+    }
+
+    // Add Ad-Hoc / Custom Item
+    document.getElementById('btn-add-adhoc').addEventListener('click', function() {
+        addAdhocItem();
     });
 
     // Render Table
@@ -371,8 +380,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         ` : `
                             <div class="text-xs text-slate-500 font-mono">${item.sku} &bull; <span class="text-emerald-600 font-medium">Catalog Product</span></div>
                         `}
-                        <input type="text" value="${item.description}" placeholder="Enter item description, labor, or service..."
-                               class="item-desc-input block w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+                        ${item.is_adhoc ? `
+                            <textarea rows="2" maxlength="255" placeholder="Enter item description, labor, or service..."
+                                      class="item-desc-input block w-full resize-y px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required></textarea>
+                        ` : `
+                            <input type="text" maxlength="255" placeholder="Enter item description..."
+                                   class="item-desc-input block w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+                        `}
                     </div>
                 </td>
                 <td class="px-4 py-3 text-center">
@@ -387,6 +401,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     KSh ${lineTotal}
                 </td>
                 <td class="px-4 py-3 text-center">
+                    <button type="button" class="btn-add-item text-emerald-600 hover:text-emerald-700 p-1" title="Add another custom item" aria-label="Add another custom item">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
                     <button type="button" class="btn-remove-item text-slate-400 hover:text-rose-600 p-1" title="Remove item">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
@@ -396,6 +413,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // Event Listeners
             const descInput = tr.querySelector('.item-desc-input');
             if (descInput) {
+                descInput.value = item.description || '';
+                if (descInput instanceof HTMLTextAreaElement) {
+                    const resizeDescription = () => {
+                        descInput.style.height = 'auto';
+                        descInput.style.height = `${descInput.scrollHeight}px`;
+                    };
+                    resizeDescription();
+                    descInput.addEventListener('input', resizeDescription);
+                }
                 descInput.addEventListener('input', (e) => {
                     item.description = e.target.value;
                     updateTotals();
@@ -435,6 +461,9 @@ document.addEventListener('DOMContentLoaded', function() {
             tr.querySelector('.btn-remove-item').addEventListener('click', () => {
                 lineItems.splice(index, 1);
                 renderItems();
+            });
+            tr.querySelector('.btn-add-item').addEventListener('click', () => {
+                addAdhocItem(index + 1);
             });
 
             itemsBody.appendChild(tr);

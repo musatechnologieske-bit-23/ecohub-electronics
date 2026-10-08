@@ -105,7 +105,7 @@ class SalesFlowTests(TestCase):
             # Ad-hoc custom item: Screen protector installation @ 15.00
             {
                 'product_id': None,  # Ad-hoc
-                'description': 'Tempered Glass Screen Protector Fitment',
+                'description': 'Tempered Glass Screen Protector\nFitment',
                 'quantity': 1,
                 'unit_price': '15.00',
                 'is_adhoc': True,
@@ -136,7 +136,7 @@ class SalesFlowTests(TestCase):
         catalog_item = invoice.items.get(product=self.product)
         self.assertEqual(catalog_item.quantity, 2)
         adhoc_item = invoice.items.get(product__isnull=True)
-        self.assertEqual(adhoc_item.description, 'Tempered Glass Screen Protector Fitment')
+        self.assertEqual(adhoc_item.description, 'Tempered Glass Screen Protector\nFitment')
         self.assertTrue(adhoc_item.is_adhoc)
 
         # CRITICAL TEST: Stock deduction for catalog product ONLY

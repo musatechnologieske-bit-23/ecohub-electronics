@@ -381,8 +381,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="text-xs text-slate-500 font-mono">${item.sku} &bull; <span class="text-emerald-600 font-medium">Catalog Product</span></div>
                         `}
                         ${item.is_adhoc ? `
-                            <textarea rows="2" maxlength="255" placeholder="Enter item description, labor, or service..."
-                                      class="item-desc-input block w-full resize-y px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required></textarea>
+                            <textarea rows="4" maxlength="255" placeholder="Enter item description, labor, or service..."
+                                      class="item-desc-input block w-full min-h-[96px] resize-y px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required></textarea>
                         ` : `
                             <input type="text" maxlength="255" placeholder="Enter item description..."
                                    class="item-desc-input block w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>

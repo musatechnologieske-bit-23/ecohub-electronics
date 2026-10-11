@@ -196,6 +196,53 @@ class SalesFlowTests(TestCase):
         self.product.refresh_from_db()
         self.assertEqual(self.product.quantity_in_stock, 45)  # 50 - 5
 
+    def test_vat_can_be_enabled_or_disabled_on_new_documents(self):
+        self.client.login(username='cashier_sales', password='password123')
+        items_payload = [{
+            'product_id': self.product.pk,
+            'description': self.product.name,
+            'quantity': 1,
+            'unit_price': '25.00',
+        }]
+
+        self.client.post(
+            reverse('sales:document_create') + '?type=quotation',
+            {
+                'customer_id': self.customer.pk,
+                'discount': '5.00',
+                'vat_enabled': '0',
+                'action_type': 'issue',
+                'items_payload': json.dumps(items_payload),
+            }
+        )
+        quotation = Document.objects.get(doc_number='QT-0001')
+        self.assertFalse(quotation.vat_enabled)
+        self.assertEqual(quotation.tax, Decimal('0.00'))
+        self.assertEqual(quotation.total, Decimal('20.00'))
+
+        self.client.post(
+            reverse('sales:document_create') + '?type=invoice',
+            {
+                'customer_id': self.customer.pk,
+                'discount': '5.00',
+                'vat_enabled': '1',
+                'action_type': 'issue',
+                'items_payload': json.dumps(items_payload),
+            }
+        )
+        invoice = Document.objects.get(doc_number='INV-0001')
+        self.assertTrue(invoice.vat_enabled)
+        self.assertEqual(invoice.tax, Decimal('3.20'))
+        self.assertEqual(invoice.total, Decimal('23.20'))
+
+        request = RequestFactory().get('/')
+        request.user = self.cashier
+        printed_document = render_to_string(
+            'sales/document_print.html',
+            _document_print_context(request, invoice),
+        )
+        self.assertIn('VAT (16%)', printed_document)
+
     def test_unconverted_quotation_can_be_deleted(self):
         self.client.login(username='cashier_sales', password='password123')
         quotation = Document.objects.create(
@@ -240,6 +287,7 @@ class SalesFlowTests(TestCase):
             'issue_date': '2026-09-28',
             'quotation_payment_term': 'approved',
             'discount': '10.00',
+            'vat_enabled': '1',
             'notes': 'Updated quote notes',
             'items_payload': json.dumps([{
                 'product_id': self.product.pk,

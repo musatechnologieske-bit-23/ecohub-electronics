@@ -199,6 +199,7 @@ def quotation_edit(request, pk):
             quotation.due_date = request.POST.get('due_date') or None
             quotation.quotation_payment_term = payment_term
             quotation.discount = discount
+            quotation.vat_enabled = request.POST.get('vat_enabled') == '1'
             quotation.notes = request.POST.get('notes', '').strip()
             quotation.items.all().delete()
 
@@ -218,7 +219,10 @@ def quotation_edit(request, pk):
 
             quotation.subtotal = subtotal
             taxable_amount = max(Decimal('0.00'), subtotal - discount)
-            quotation.tax = (taxable_amount * VAT_RATE).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            quotation.tax = (
+                (taxable_amount * VAT_RATE).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                if quotation.vat_enabled else Decimal('0.00')
+            )
             quotation.total = max(Decimal('0.00'), subtotal - discount + quotation.tax)
             quotation.save()
 
@@ -318,7 +322,10 @@ def document_create(request):
         if quotation_payment_term not in Document.QuotationPaymentTerm.values:
             quotation_payment_term = Document.QuotationPaymentTerm.CASH
         discount_val = Decimal(request.POST.get('discount') or '0.00')
-        tax_val = Decimal(request.POST.get('tax') or '0.00')
+        vat_enabled = request.POST.get('vat_enabled') == '1'
+        if 'vat_enabled' not in request.POST:
+            vat_enabled = doc_type == Document.DocType.QUOTATION
+        tax_val = Decimal('0.00')
         action_type = request.POST.get('action_type', 'issue')  # 'draft' or 'issue'
 
         # Parse items JSON payload
@@ -382,6 +389,7 @@ def document_create(request):
                     else Document.QuotationPaymentTerm.CASH
                 ),
                 discount=discount_val,
+                vat_enabled=vat_enabled,
                 tax=tax_val,
                 notes=notes,
                 created_by=request.user,
@@ -425,10 +433,10 @@ def document_create(request):
                     )
 
             doc.subtotal = subtotal
-            if doc.is_quotation:
+            if doc.vat_enabled:
                 taxable_amount = max(Decimal('0.00'), subtotal - discount_val)
                 tax_val = (taxable_amount * VAT_RATE).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                doc.tax = tax_val
+            doc.tax = tax_val
             doc.total = max(Decimal('0.00'), subtotal - discount_val + tax_val)
             doc.save()
 
@@ -465,6 +473,7 @@ def quotation_convert_to_invoice(request, pk):
             issue_date=timezone.now().date(),
             subtotal=quotation.subtotal,
             discount=quotation.discount,
+            vat_enabled=quotation.vat_enabled,
             tax=quotation.tax,
             total=quotation.total,
             quotation_payment_term=quotation.quotation_payment_term,

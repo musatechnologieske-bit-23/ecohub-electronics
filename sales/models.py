@@ -39,6 +39,7 @@ class Document(models.Model):
 
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     discount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    vat_enabled = models.BooleanField(default=False)
     tax = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     notes = models.TextField(blank=True, default='')

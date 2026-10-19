@@ -53,16 +53,16 @@ sudo apt install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 libjpeg
 cp .env.example .env
 ```
 
-Edit `.env` and replace the secret placeholder. By default, local development
-uses SQLite. To use Supabase locally, set `DATABASE_URL` to the PostgreSQL
-connection string from your Supabase project. Never commit `.env` or production
-secrets.
+Edit `.env`, replace the secret placeholder, and set `DATABASE_URL` to a
+PostgreSQL connection string, such as the one from your Supabase project.
+PostgreSQL is required locally and in production. Never commit `.env` or
+production secrets.
 
 ```dotenv
 DEBUG=True
 SECRET_KEY=replace-with-a-long-random-secret
 ALLOWED_HOSTS=localhost,127.0.0.1
-DATABASE_URL=
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
 ```
 
 ### 4. Apply migrations and create an administrator

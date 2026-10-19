@@ -95,33 +95,24 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ---------------------------------------------------------------------------
 # Database
 #
-# Supabase's PostgreSQL connection string is supplied via DATABASE_URL.
-#
-# Locally (DEBUG=True), SQLite is used when DATABASE_URL is not set.
-#
-# In production (DEBUG=False), a missing DATABASE_URL raises a clear error.
+# PostgreSQL connection string is supplied via DATABASE_URL.
 # ---------------------------------------------------------------------------
 
 DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=0,
-            ssl_require=not DEBUG,
-        ),
-    }
-elif DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        },
-    }
-else:
+if not DATABASE_URL:
     raise ImproperlyConfigured(
-        'Set DATABASE_URL to your Supabase PostgreSQL connection string when DEBUG is False.'
+        'Set DATABASE_URL to your PostgreSQL connection string.'
     )
+
+DATABASES = {
+    'default': dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=0,
+        ssl_require=not DEBUG,
+    ),
+}
+if DATABASES['default']['ENGINE'] != 'django.db.backends.postgresql':
+    raise ImproperlyConfigured('DATABASE_URL must point to a PostgreSQL database.')
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'

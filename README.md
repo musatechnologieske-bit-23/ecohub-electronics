@@ -58,6 +58,9 @@ PostgreSQL connection string, such as the one from your Supabase project.
 PostgreSQL is required locally and in production. Never commit `.env` or
 production secrets.
 
+If the database password contains reserved URL characters, percent-encode
+them in `DATABASE_URL` (for example, `#` as `%23` and `@` as `%40`).
+
 ```dotenv
 DEBUG=True
 SECRET_KEY=replace-with-a-long-random-secret

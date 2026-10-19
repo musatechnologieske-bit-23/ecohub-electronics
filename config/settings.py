@@ -113,6 +113,12 @@ DATABASES = {
 }
 if DATABASES['default']['ENGINE'] != 'django.db.backends.postgresql':
     raise ImproperlyConfigured('DATABASE_URL must point to a PostgreSQL database.')
+if not DATABASES['default']['NAME']:
+    raise ImproperlyConfigured(
+        'DATABASE_URL must include a database name after the host (for example, '
+        '...:5432/postgres). Percent-encode reserved characters in the username '
+        'or password, such as # as %23 and @ as %40.'
+    )
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'

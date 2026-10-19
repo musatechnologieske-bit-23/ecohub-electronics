@@ -1,7 +1,8 @@
 Django==5.0.14
+dj-database-url==2.3.0
 gunicorn==23.0.0
 openpyxl==3.1.5
-PyMySQL==1.2.3
+psycopg[binary]==3.2.9
 python-dotenv==1.2.3
 WeasyPrint==70.0
 whitenoise==6.9.0

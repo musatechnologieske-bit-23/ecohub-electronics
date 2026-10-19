@@ -3,16 +3,16 @@ Django settings for Ecohub project.
 """
 
 from pathlib import Path
-from urllib.parse import urlparse
 import os
+import dj_database_url
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file (only present locally;
-# on Railway, variables come from the platform directly and this is a no-op)
+# Load Vercel's pulled variables first so they take precedence over local defaults.
+load_dotenv(BASE_DIR / '.env.local')
 load_dotenv(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
@@ -25,19 +25,24 @@ if not SECRET_KEY:
         raise ImproperlyConfigured('Set SECRET_KEY in the environment when DEBUG is False.')
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
-RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
-if RAILWAY_PUBLIC_DOMAIN and RAILWAY_PUBLIC_DOMAIN not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+VERCEL_DOMAINS = [
+    os.getenv(name)
+    for name in ('VERCEL_URL', 'VERCEL_BRANCH_URL', 'VERCEL_PROJECT_PRODUCTION_URL')
+]
+for vercel_domain in VERCEL_DOMAINS:
+    if vercel_domain and vercel_domain not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(vercel_domain)
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
     if origin.strip()
 ]
-if RAILWAY_PUBLIC_DOMAIN:
-    railway_origin = f'https://{RAILWAY_PUBLIC_DOMAIN}'
-    if railway_origin not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(railway_origin)
+for vercel_domain in VERCEL_DOMAINS:
+    if vercel_domain:
+        vercel_origin = f'https://{vercel_domain}'
+        if vercel_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(vercel_origin)
 
 # Application definition
 INSTALLED_APPS = [
@@ -90,73 +95,33 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ---------------------------------------------------------------------------
 # Database
 #
-# On Railway, we read the single MYSQL_URL connection string that Railway
-# auto-generates when a MySQL database is attached to this service
-# (mysql://user:password@host:port/database). This avoids relying on
-# individually-named DB_* reference variables, which are easy to mismatch
-# against Railway's actual variable names.
+# Supabase's PostgreSQL connection string is supplied via DATABASE_URL.
 #
-# Locally (DEBUG=True), we fall back to DB_NAME / DB_USER / DB_PASSWORD /
-# DB_HOST / DB_PORT from your .env file as before.
+# Locally (DEBUG=True), SQLite is used when DATABASE_URL is not set.
 #
-# In production (DEBUG=False), if neither MYSQL_URL nor a complete set of
-# DB_* variables resolves to real values, we fail loudly here with a clear
-# error instead of silently defaulting to 127.0.0.1/localhost and producing
-# a confusing connection-refused error deep inside PyMySQL.
+# In production (DEBUG=False), a missing DATABASE_URL raises a clear error.
 # ---------------------------------------------------------------------------
 
-MYSQL_URL = os.getenv('MYSQL_URL', '').strip()
-
-if MYSQL_URL:
-    parsed = urlparse(MYSQL_URL)
-    DB_NAME = parsed.path.lstrip('/')
-    DB_USER = parsed.username or 'root'
-    DB_PASSWORD = parsed.password or ''
-    DB_HOST = parsed.hostname or ''
-    DB_PORT = str(parsed.port or 3306)
-else:
-    DB_NAME = os.getenv('DB_NAME', '').strip()
-    DB_USER = os.getenv('DB_USER', '').strip()
-    DB_PASSWORD = os.getenv('DB_PASSWORD', '')
-    DB_HOST = os.getenv('DB_HOST', '').strip()
-    DB_PORT = os.getenv('DB_PORT', '').strip()
-
-    if DEBUG:
-        # Sensible local defaults so `runserver` works out of the box on a dev machine
-        DB_NAME = DB_NAME or 'ecohub'
-        DB_USER = DB_USER or 'root'
-        DB_HOST = DB_HOST or '127.0.0.1'
-        DB_PORT = DB_PORT or '3306'
-
-if not DEBUG:
-    missing = [
-        name for name, value in [
-            ('DB_NAME', DB_NAME),
-            ('DB_USER', DB_USER),
-            ('DB_HOST', DB_HOST),
-            ('DB_PORT', DB_PORT),
-        ] if not value
-    ]
-    if missing:
-        raise ImproperlyConfigured(
-            f"Missing or empty required database settings: {', '.join(missing)}. "
-            "Ensure MYSQL_URL (or DB_NAME/DB_USER/DB_HOST/DB_PORT) is set on the Railway service."
-        )
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': DB_NAME,
-        'USER': DB_USER,
-        'PASSWORD': DB_PASSWORD,
-        'HOST': DB_HOST,
-        'PORT': DB_PORT,
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=0,
+            ssl_require=not DEBUG,
+        ),
+    }
+elif DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         },
     }
-}
+else:
+    raise ImproperlyConfigured(
+        'Set DATABASE_URL to your Supabase PostgreSQL connection string when DEBUG is False.'
+    )
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'

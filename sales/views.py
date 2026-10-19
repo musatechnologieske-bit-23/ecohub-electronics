@@ -10,7 +10,6 @@ from django.template.loader import render_to_string
 from decimal import Decimal, ROUND_HALF_UP
 from django.utils import timezone
 import json
-from weasyprint import HTML
 
 VAT_RATE = Decimal('0.16')
 
@@ -262,6 +261,8 @@ def document_detail(request, pk):
 @login_required
 def document_print(request, pk):
     """Return a clean PDF without browser-generated URL or title headers."""
+    from weasyprint import HTML
+
     document = get_object_or_404(
         Document.objects.select_related('customer', 'created_by', 'converted_from'), pk=pk
     )

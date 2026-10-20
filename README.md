@@ -40,13 +40,6 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-On Ubuntu/Debian, install WeasyPrint's system libraries before installing Python packages:
-
-```bash
-sudo apt update
-sudo apt install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 libjpeg-dev libopenjp2-7
-```
-
 ### 3. Configure environment variables
 
 ```bash
@@ -128,10 +121,9 @@ changing the connection string; export and import existing records separately
 if you need to keep them. Supabase and Vercel free-tier quotas and availability
 limits apply.
 
-WeasyPrint PDF generation depends on native Pango libraries. The import is
-deferred until a PDF is requested so that a missing native library does not
-prevent the rest of the Django app from starting; verify PDF exports on Vercel
-before relying on them.
+Invoice and quotation print pages are rendered as HTML so they work on Vercel
+without native PDF libraries. Use the page's **Print document** button and
+choose **Save as PDF** in the browser's print dialog to create a PDF.
 
 ### Ubuntu server deployment
 
@@ -141,7 +133,7 @@ The following example targets an Ubuntu server with the application checked out 
 
 ```bash
 sudo apt update
-sudo apt install -y python3-venv nginx libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 libjpeg-dev libopenjp2-7
+sudo apt install -y python3-venv nginx
 ```
 
 Create the virtual environment and install the application dependencies:

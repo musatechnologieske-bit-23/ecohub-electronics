@@ -104,6 +104,7 @@ if not DATABASE_URL:
         'Set DATABASE_URL to your PostgreSQL connection string.'
     )
 
+
 DATABASES = {
     'default': dj_database_url.parse(
         DATABASE_URL,

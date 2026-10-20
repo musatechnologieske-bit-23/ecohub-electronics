@@ -1,4 +1,4 @@
-from django.test import TestCase, Client, RequestFactory
+from django.test import TestCase, Client, RequestFactory, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
@@ -469,3 +469,20 @@ class SalesFlowTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+    @override_settings(SECURE_SSL_REDIRECT=False, SESSION_COOKIE_SECURE=False)
+    def test_document_print_renders_browser_printable_html(self):
+        self.client.login(username='cashier_sales', password='password123')
+        invoice = Document.objects.create(
+            doc_type=Document.DocType.INVOICE,
+            doc_number='INV-PRINT-HTML',
+            customer=self.customer,
+            created_by=self.cashier,
+        )
+
+        response = self.client.get(reverse('sales:document_print', args=[invoice.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/html; charset=utf-8')
+        self.assertContains(response, 'Print document')
+        self.assertContains(response, 'INV-PRINT-HTML')

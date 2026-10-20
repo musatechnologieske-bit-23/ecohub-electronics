@@ -6,7 +6,6 @@ from django.db import transaction
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
-from django.template.loader import render_to_string
 from decimal import Decimal, ROUND_HALF_UP
 from django.utils import timezone
 import json
@@ -260,23 +259,17 @@ def document_detail(request, pk):
 
 @login_required
 def document_print(request, pk):
-    """Return a clean PDF without browser-generated URL or title headers."""
-    from weasyprint import HTML
-
+    """Render a browser-printable document that can be saved as a PDF."""
     document = get_object_or_404(
         Document.objects.select_related('customer', 'created_by', 'converted_from'), pk=pk
     )
     if request.GET.get('signature_type') == 'custom' and not request.GET.get('signature_name', '').strip():
         return HttpResponse('Please provide a signature name or select the logged-in user.', status=400)
-    html = render_to_string(
+    return render(
+        request,
         'sales/document_print.html',
         _document_print_context(request, document),
-        request=request,
     )
-    pdf = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
-    response = HttpResponse(pdf, content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename="{document.doc_number}.pdf"'
-    return response
 
 
 @login_required

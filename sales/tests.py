@@ -39,6 +39,10 @@ class SalesFlowTests(TestCase):
             created_by=self.cashier
         )
 
+    @override_settings(STORAGES={
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    })
     def test_print_terms_are_optional_and_signature_is_not_repeated_below_line(self):
         invoice = Document.objects.create(
             doc_type=Document.DocType.INVOICE,
@@ -64,8 +68,11 @@ class SalesFlowTests(TestCase):
         printed_document = render_to_string('sales/document_print.html', context)
         self.assertEqual(printed_document.count(self.cashier.username), 1)
         self.assertIn('Authorized signature', printed_document)
-        self.assertIn('KRA PIN: P052109923A', printed_document)
-        self.assertIn('KRA PIN:</strong> A123456789Z', printed_document)
+        self.assertIn('P052109923A', printed_document)
+        self.assertIn('A123456789Z', printed_document)
+        self.assertNotIn('KRA PIN:', printed_document)
+        self.assertIn('@page { size: A4; margin: 0; }', printed_document)
+        self.assertIn('background: #073b8f', printed_document)
         self.assertIn('Warranty is provided', printed_document)
         self.assertNotIn('Bank Code: 07000', printed_document)
         self.assertNotIn('GREENSPAN MALL', printed_document)
@@ -470,7 +477,14 @@ class SalesFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    @override_settings(SECURE_SSL_REDIRECT=False, SESSION_COOKIE_SECURE=False)
+    @override_settings(
+        SECURE_SSL_REDIRECT=False,
+        SESSION_COOKIE_SECURE=False,
+        STORAGES={
+            'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+            'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+        },
+    )
     def test_document_print_renders_browser_printable_html(self):
         self.client.login(username='cashier_sales', password='password123')
         invoice = Document.objects.create(

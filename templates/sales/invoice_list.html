@@ -56,7 +56,7 @@
                         <th class="px-6 py-3.5 text-right">Paid (KSh)</th>
                         <th class="px-6 py-3.5 text-right">Balance (KSh)</th>
                         <th class="px-6 py-3.5 text-center">Status</th>
-                        <th class="px-6 py-3.5 text-right">Actions</th>
+                        <th class="sticky right-0 z-10 bg-slate-50 px-6 py-3.5 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -111,7 +111,7 @@
                             </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-1.5">
+                        <td class="sticky right-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-right text-sm space-x-1.5">
                             <a href="{% url 'sales:document_detail' inv.pk %}" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
                                 View
                             </a>

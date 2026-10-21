@@ -29,6 +29,9 @@
         <button type="submit" class="inline-flex items-center px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold border border-slate-300 rounded-lg transition-colors">
             <i class="fa-solid fa-file-pdf mr-1.5 text-slate-500"></i> Print or Save as PDF
         </button>
+        <button type="submit" formaction="{% url 'sales:document_download' document.pk %}" formtarget="_self" class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors">
+            <i class="fa-solid fa-download mr-1.5"></i> Download PDF
+        </button>
     </form>
 
     {% if document.is_quotation and document.status != 'converted' and document.status != 'cancelled' %}

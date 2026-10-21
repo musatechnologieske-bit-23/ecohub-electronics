@@ -11,6 +11,7 @@ urlpatterns = [
     path('create/', views.document_create, name='document_create'),
     path('document/<int:pk>/', views.document_detail, name='document_detail'),
     path('document/<int:pk>/print/', views.document_print, name='document_print'),
+    path('document/<int:pk>/download/', views.document_download, name='document_download'),
     path('document/<int:pk>/receipt/print/', views.receipt_print, name='receipt_print'),
     path('document/<int:pk>/convert/', views.quotation_convert_to_invoice, name='quotation_convert'),
     path('document/<int:pk>/pay/', views.record_payment, name='record_payment'),

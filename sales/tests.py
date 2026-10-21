@@ -545,3 +545,43 @@ class SalesFlowTests(TestCase):
         self.assertEqual(response['Content-Type'], 'text/html; charset=utf-8')
         self.assertContains(response, 'Print document')
         self.assertContains(response, 'INV-PRINT-HTML')
+
+    @override_settings(SECURE_SSL_REDIRECT=False, SESSION_COOKIE_SECURE=False)
+    def test_document_download_returns_pdf_attachment_for_invoice_and_quotation(self):
+        self.client.login(username='cashier_sales', password='password123')
+        for doc_type, doc_number in (
+            (Document.DocType.INVOICE, 'INV-DOWNLOAD-1'),
+            (Document.DocType.QUOTATION, 'QT-DOWNLOAD-1'),
+        ):
+            with self.subTest(doc_type=doc_type):
+                document = Document.objects.create(
+                    doc_type=doc_type,
+                    doc_number=doc_number,
+                    customer=self.customer,
+                    created_by=self.cashier,
+                )
+
+                response = self.client.get(reverse('sales:document_download', args=[document.pk]))
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response['Content-Type'], 'application/pdf')
+                self.assertIn('attachment;', response['Content-Disposition'])
+                self.assertTrue(response['Content-Disposition'].endswith('.pdf"'))
+                self.assertTrue(b''.join(response.streaming_content).startswith(b'%PDF-'))
+
+    @override_settings(SECURE_SSL_REDIRECT=False, SESSION_COOKIE_SECURE=False)
+    def test_document_download_requires_custom_signature_name(self):
+        self.client.login(username='cashier_sales', password='password123')
+        invoice = Document.objects.create(
+            doc_type=Document.DocType.INVOICE,
+            doc_number='INV-DOWNLOAD-SIGNATURE',
+            customer=self.customer,
+            created_by=self.cashier,
+        )
+
+        response = self.client.get(
+            reverse('sales:document_download', args=[invoice.pk]),
+            {'signature_type': 'custom'},
+        )
+
+        self.assertEqual(response.status_code, 400)

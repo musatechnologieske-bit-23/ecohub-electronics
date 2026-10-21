@@ -203,6 +203,51 @@ class SalesFlowTests(TestCase):
         self.product.refresh_from_db()
         self.assertEqual(self.product.quantity_in_stock, 45)  # 50 - 5
 
+    def test_quotation_items_keep_entry_order_in_views_and_conversion(self):
+        self.client.login(username='cashier_sales', password='password123')
+        descriptions = ['First entered item', 'Second entered item', 'Third entered item']
+        items_payload = [{
+            'product_id': None,
+            'description': description,
+            'quantity': 1,
+            'unit_price': '10.00',
+        } for description in descriptions]
+
+        response = self.client.post(
+            reverse('sales:document_create') + '?type=quotation',
+            {
+                'customer_id': self.customer.pk,
+                'action_type': 'issue',
+                'items_payload': json.dumps(items_payload),
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        quotation = Document.objects.get(doc_number='QT-0001')
+        self.assertEqual(
+            list(quotation.items.values_list('description', flat=True)),
+            descriptions,
+        )
+
+        edit_response = self.client.get(reverse('sales:quotation_edit', args=[quotation.pk]))
+        self.assertEqual(
+            [item['description'] for item in edit_response.context['initial_items']],
+            descriptions,
+        )
+
+        detail_response = self.client.get(reverse('sales:document_detail', args=[quotation.pk]))
+        printed_response = self.client.get(reverse('sales:document_print', args=[quotation.pk]))
+        for rendered_response in (detail_response, printed_response):
+            positions = [rendered_response.content.index(description.encode()) for description in descriptions]
+            self.assertEqual(positions, sorted(positions))
+
+        convert_response = self.client.post(reverse('sales:quotation_convert', args=[quotation.pk]))
+        self.assertEqual(convert_response.status_code, 302)
+        invoice = Document.objects.get(converted_from=quotation)
+        self.assertEqual(
+            list(invoice.items.values_list('description', flat=True)),
+            descriptions,
+        )
+
     def test_vat_can_be_enabled_or_disabled_on_new_documents(self):
         self.client.login(username='cashier_sales', password='password123')
         items_payload = [{

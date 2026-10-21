@@ -20,6 +20,10 @@
     </a>
     {% endif %}
 
+    <a href="{% url 'sales:document_download' document.pk %}" class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors">
+        <i class="fa-solid fa-download mr-1.5"></i> Download PDF
+    </a>
+
     <form method="get" action="{% url 'sales:document_print' document.pk %}" target="_blank" class="inline-flex items-center gap-1.5">
         <select name="signature_type" id="signature-type" class="px-2 py-2 bg-white text-slate-700 text-xs font-semibold border border-slate-300 rounded-lg">
             <option value="user">Sign as logged-in user</option>
@@ -28,9 +32,6 @@
         <input type="text" name="signature_name" id="signature-name" placeholder="Signature name" aria-label="Custom signature name" class="hidden w-32 px-2 py-2 text-xs border border-slate-300 rounded-lg">
         <button type="submit" class="inline-flex items-center px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold border border-slate-300 rounded-lg transition-colors">
             <i class="fa-solid fa-file-pdf mr-1.5 text-slate-500"></i> Print or Save as PDF
-        </button>
-        <button type="submit" formaction="{% url 'sales:document_download' document.pk %}" formtarget="_self" class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors">
-            <i class="fa-solid fa-download mr-1.5"></i> Download PDF
         </button>
     </form>
 
